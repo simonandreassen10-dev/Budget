@@ -5,468 +5,173 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Budget-hovedbog</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
   :root {
-    --paper: #EFEAD9;
-    --paper-line: rgba(42,37,33,0.08);
-    --navy: #1E2A38;
-    --green: #2F6B4F;
-    --green-bg: rgba(47,107,79,0.10);
-    --rust: #9C3D2E;
-    --rust-bg: rgba(156,61,46,0.10);
-    --gold: #B8902F;
-    --ink: #2A2521;
-    --ink-soft: rgba(42,37,33,0.62);
+    --bg: #F0F1F3;
+    --card: #FFFFFF;
+    --border: #E5E6EA;
+    --text: #1C1E21;
+    --text-muted: #767A82;
+    --text-faint: #9CA0A8;
+    --green: #2F8F5B;
+    --red: #C0553B;
+    --navy: #33415C;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 24px 14px;
-    background: #0F1620;
+    padding: 28px 14px;
+    background: var(--bg);
     font-family: 'Inter', sans-serif;
-    color: var(--ink);
+    color: var(--text);
     min-height: 100vh;
   }
-  .bh-root {
-    font-family: 'Inter', sans-serif;
-    color: var(--ink);
-    background: var(--navy);
-    border-radius: 18px;
-    padding: 18px;
-    max-width: 980px;
-    margin: 0 auto;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .bh-root { max-width: 1040px; margin: 0 auto; }
 
-  .bh-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px 18px 14px;
-    color: #F5F1E3;
-  }
-  .bh-title {
-    font-family: 'Fraunces', serif;
-    font-size: 26px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .bh-title svg { flex-shrink: 0; }
-  .bh-year-nav {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
-  }
-  .bh-year-btn {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: #F5F1E3;
-    border-radius: 8px;
-    width: 30px; height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-  }
-  .bh-year-btn:hover { background: rgba(255,255,255,0.16); }
-
-  .bh-summary {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 0 14px 16px 14px;
-  }
-  .bh-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 12px;
-    padding: 12px 14px;
-  }
-  .bh-card-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(245,241,227,0.55);
-    margin-bottom: 4px;
-  }
-  .bh-card-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 19px;
-    font-weight: 600;
-    color: #F5F1E3;
-  }
-  .bh-card-value.pos { color: #7FC29B; }
-  .bh-card-value.neg { color: #E08A78; }
-
-  .bh-chart-wrap {
-    padding: 4px 14px 16px 14px;
-  }
-  .bh-chart-bar-group { cursor: pointer; }
-  .bh-chart-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px;
-    fill: rgba(245,241,227,0.55);
-  }
-
-  .bh-book {
-    background: var(--paper);
-    border-radius: 14px;
-    padding: 4px;
-    display: flex;
-    gap: 0;
-    min-height: 480px;
-  }
-
-  .bh-tabs {
-    display: flex;
-    flex-direction: column;
-    padding: 14px 6px 14px 10px;
-    gap: 2px;
-    min-width: 92px;
-  }
-  .bh-tab {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    background: transparent;
-    border: none;
-    border-right: 3px solid transparent;
-    text-align: left;
-    padding: 7px 10px;
-    border-radius: 6px 0 0 6px;
-    cursor: pointer;
-    transition: all 0.12s ease;
-    width: 100%;
-  }
-  .bh-tab:hover { background: rgba(42,37,33,0.05); color: var(--ink); }
-  .bh-tab.active {
-    background: #fff;
-    color: var(--ink);
-    font-weight: 600;
-    border-right: 3px solid var(--gold);
-    box-shadow: -2px 2px 6px rgba(42,37,33,0.06);
-  }
-
-  .bh-page {
-    flex: 1;
-    background: repeating-linear-gradient(
-      to bottom,
-      #fff 0px, #fff 33px, var(--paper-line) 34px, #fff 35px
-    );
-    border-radius: 4px 12px 12px 4px;
-    padding: 20px 22px;
-    box-shadow: -6px 0 14px rgba(42,37,33,0.05) inset;
-    min-width: 0;
-  }
-
-  .bh-page-title {
-    font-family: 'Fraunces', serif;
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-  .bh-page-sub {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    color: var(--ink-soft);
-    margin-bottom: 16px;
-  }
-
-  .bh-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 22px;
-  }
-  @media (max-width: 680px) {
-    .bh-columns { grid-template-columns: 1fr; }
-    .bh-summary { grid-template-columns: 1fr; }
-    .bh-book { flex-direction: column; }
-    .bh-tabs { flex-direction: row; overflow-x: auto; min-width: 0; }
-    .bh-tab.active { border-right: none; border-bottom: 3px solid var(--gold); }
-  }
-
-  .bh-col-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .bh-col-title {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .bh-col-title.income { color: var(--green); }
-  .bh-col-title.expense { color: var(--rust); }
-
-  .bh-add-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    font-weight: 600;
-    border: 1px solid;
-    background: transparent;
-    border-radius: 7px;
-    padding: 5px 10px;
-    cursor: pointer;
-    transition: all 0.12s ease;
-  }
-  .bh-add-btn.income { color: var(--green); border-color: var(--green); }
-  .bh-add-btn.income:hover { background: var(--green-bg); }
-  .bh-add-btn.expense { color: var(--rust); border-color: var(--rust); }
-  .bh-add-btn.expense:hover { background: var(--rust-bg); }
-
-  .bh-entry-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-height: 40px;
-    margin-bottom: 8px;
-  }
-  .bh-entry {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 7px 9px;
-    border-radius: 8px;
-    background: rgba(42,37,33,0.03);
-    gap: 8px;
-  }
-  .bh-entry-left {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .bh-entry-badge {
-    font-size: 10.5px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    width: fit-content;
-    padding: 1px 6px;
-    border-radius: 5px;
-    margin-bottom: 2px;
-  }
-  .bh-entry-badge.income { background: var(--green-bg); color: var(--green); }
-  .bh-entry-badge.expense { background: var(--rust-bg); color: var(--rust); }
-  .bh-entry-desc {
-    font-size: 12.5px;
-    color: var(--ink-soft);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .bh-entry-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .bh-entry-amount {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .bh-entry-amount.income { color: var(--green); }
-  .bh-entry-amount.expense { color: var(--rust); }
-  .bh-del-btn {
-    background: transparent;
-    border: none;
-    color: rgba(42,37,33,0.28);
-    cursor: pointer;
-    padding: 2px;
-    border-radius: 4px;
-    display: flex;
-  }
-  .bh-del-btn:hover { color: var(--rust); background: var(--rust-bg); }
-
-  .bh-empty {
-    font-size: 12.5px;
-    color: rgba(42,37,33,0.35);
-    font-style: italic;
-    padding: 8px 2px;
-  }
-
-  .bh-col-total {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 8px;
-    border-top: 1.5px solid rgba(42,37,33,0.12);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13.5px;
-    font-weight: 600;
-  }
-
-  .bh-form {
-    margin-top: 10px;
-    padding: 10px;
-    background: rgba(184,144,47,0.07);
-    border: 1px solid rgba(184,144,47,0.25);
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .bh-form select, .bh-form input {
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    padding: 7px 9px;
-    border-radius: 7px;
-    border: 1px solid rgba(42,37,33,0.18);
-    background: #fff;
-    color: var(--ink);
-    outline: none;
-    width: 100%;
-  }
-  .bh-form select:focus, .bh-form input:focus {
-    border-color: var(--gold);
-  }
-  .bh-form-actions {
-    display: flex;
-    gap: 8px;
-  }
-  .bh-form-actions button {
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 7px;
-    cursor: pointer;
-    border: none;
-  }
-  .bh-submit-btn { background: var(--ink); color: #fff; }
-  .bh-submit-btn:hover { background: #000; }
-  .bh-cancel-btn { background: transparent; color: var(--ink-soft); border: 1px solid rgba(42,37,33,0.18) !important; }
-  .bh-cancel-btn:hover { background: rgba(42,37,33,0.05); }
-
-  .bh-month-balance {
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1.5px solid rgba(42,37,33,0.12);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-  .bh-month-balance-label {
-    font-family: 'Fraunces', serif;
-    font-size: 14px;
-    color: var(--ink-soft);
-  }
-  .bh-month-balance-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-  }
-
-  .bh-footnote {
-    text-align: center;
-    font-size: 11px;
-    color: rgba(245,241,227,0.35);
-    padding: 14px 0 4px 0;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-
-  /* --- Login / auth --- */
-  .bh-auth-wrap {
-    max-width: 380px;
-    margin: 60px auto;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 14px;
-    padding: 28px;
-    color: #F5F1E3;
-  }
-  .bh-auth-title {
-    font-family: 'Fraunces', serif;
-    font-size: 22px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .bh-auth-sub {
-    font-size: 12.5px;
-    color: rgba(245,241,227,0.55);
-    margin-bottom: 20px;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-  .bh-auth-wrap input {
-    width: 100%;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.06);
-    color: #F5F1E3;
-    outline: none;
-    margin-bottom: 10px;
-  }
-  .bh-auth-wrap input:focus { border-color: var(--gold); }
-  .bh-auth-wrap input::placeholder { color: rgba(245,241,227,0.35); }
-  .bh-auth-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 4px;
-  }
-  .bh-auth-actions button {
-    flex: 1;
-    font-family: 'Inter', sans-serif;
-    font-size: 13.5px;
-    font-weight: 600;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: none;
-  }
-  .bh-auth-primary { background: var(--gold); color: #1E2A38; }
-  .bh-auth-primary:hover { background: #cba13a; }
-  .bh-auth-secondary { background: transparent; color: #F5F1E3; border: 1px solid rgba(255,255,255,0.2) !important; }
-  .bh-auth-secondary:hover { background: rgba(255,255,255,0.08); }
-  .bh-auth-error {
-    font-size: 12.5px;
-    color: #E08A78;
-    margin-top: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-  }
   .bh-topbar {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 4px 4px 0 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    color: rgba(245,241,227,0.5);
+    justify-content: space-between;
+    margin-bottom: 18px;
   }
+  .bh-title-group { display: flex; align-items: baseline; gap: 10px; }
+  .bh-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-subtitle { font-size: 13px; color: var(--text-muted); }
+  .bh-user-info { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-muted); }
   .bh-logout-btn {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: #F5F1E3;
-    border-radius: 7px;
-    padding: 4px 10px;
-    font-family: 'Inter', sans-serif;
-    font-size: 11.5px;
-    cursor: pointer;
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; padding: 6px 12px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
   }
-  .bh-logout-btn:hover { background: rgba(255,255,255,0.16); }
-  .bh-sync-note {
-    text-align: center;
-    font-size: 11px;
-    color: rgba(245,241,227,0.35);
-    padding: 2px 0 4px 0;
-    font-family: 'IBM Plex Mono', monospace;
+  .bh-logout-btn:hover { background: #F5F5F6; }
+
+  .bh-controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin-bottom: 18px; flex-wrap: wrap;
   }
+  .bh-month-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .bh-pill {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; cursor: pointer; white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .bh-pill:hover { background: #F5F5F6; }
+  .bh-pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .bh-year-nav {
+    display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .bh-year-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer;
+  }
+  .bh-year-btn:hover { background: #F5F5F6; }
+
+  .bh-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .bh-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .bh-card-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 600; margin-bottom: 6px;
+  }
+  .bh-card-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-card-value.pos { color: var(--green); }
+  .bh-card-value.neg { color: var(--red); }
+  .bh-card-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
+
+  .bh-main-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 780px) {
+    .bh-main-grid { grid-template-columns: 1fr; }
+    .bh-summary { grid-template-columns: 1fr; }
+  }
+
+  .bh-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .bh-panel-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+  }
+
+  .bh-donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .bh-donut-svg { flex-shrink: 0; }
+  .bh-legend { display: flex; flex-direction: column; gap: 7px; width: 100%; max-height: 210px; overflow-y: auto; }
+  .bh-legend-row { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; gap: 8px; }
+  .bh-legend-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .bh-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-legend-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-legend-amount { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  .bh-empty-panel { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 20px 0; text-align: center; }
+
+  .bh-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .bh-list-title { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .bh-list-title.income { color: var(--green); }
+  .bh-list-title.expense { color: var(--red); }
+
+  .bh-add-btn {
+    display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 7px; padding: 5px 11px; cursor: pointer; transition: all 0.12s ease;
+  }
+  .bh-add-btn:hover { background: #E9E9EC; }
+
+  .bh-entry-list { display: flex; flex-direction: column; gap: 6px; min-height: 30px; margin-bottom: 8px; }
+  .bh-entry { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--bg); gap: 8px; }
+  .bh-entry-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bh-entry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-entry-text { display: flex; flex-direction: column; min-width: 0; }
+  .bh-entry-cat { font-size: 12.5px; font-weight: 600; color: var(--text); }
+  .bh-entry-desc { font-size: 11.5px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .bh-entry-amount { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; }
+  .bh-entry-amount.income { color: var(--green); }
+  .bh-entry-amount.expense { color: var(--red); }
+  .bh-del-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; }
+  .bh-del-btn:hover { color: var(--red); background: #F3E3DF; }
+
+  .bh-empty { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 10px 2px; }
+
+  .bh-col-total {
+    display: flex; justify-content: space-between; padding-top: 10px; margin-top: 4px;
+    border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; font-weight: 700;
+  }
+
+  .bh-form {
+    margin: 4px 0 12px 0; padding: 10px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .bh-form select, .bh-form input {
+    font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px 10px; border-radius: 7px;
+    border: 1px solid var(--border); background: #fff; color: var(--text); outline: none; width: 100%;
+  }
+  .bh-form select:focus, .bh-form input:focus { border-color: var(--navy); }
+  .bh-form-actions { display: flex; gap: 8px; }
+  .bh-form-actions button {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; padding: 7px 12px;
+    border-radius: 7px; cursor: pointer; border: none;
+  }
+  .bh-submit-btn { background: var(--text); color: #fff; }
+  .bh-submit-btn:hover { background: #000; }
+  .bh-cancel-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border) !important; }
+  .bh-cancel-btn:hover { background: #F5F5F6; }
+
+  .bh-footnote { text-align: center; font-size: 11px; color: var(--text-faint); padding: 10px 0 4px 0; font-family: 'IBM Plex Mono', monospace; }
+
+  .bh-auth-wrap { max-width: 380px; margin: 70px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+  .bh-auth-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .bh-auth-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; }
+  .bh-auth-wrap input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; margin-bottom: 10px;
+  }
+  .bh-auth-wrap input:focus { border-color: var(--navy); }
+  .bh-auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .bh-auth-actions button { flex: 1; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; border: none; }
+  .bh-auth-primary { background: var(--navy); color: #fff; }
+  .bh-auth-primary:hover { background: #263048; }
+  .bh-auth-secondary { background: transparent; color: var(--text); border: 1px solid var(--border) !important; }
+  .bh-auth-secondary:hover { background: #F5F5F6; }
+  .bh-auth-error { font-size: 12.5px; color: var(--red); margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -501,6 +206,12 @@
   const MAANEDER_KORT = ["Jan","Feb","Mar","Apr","Maj","Jun","Jul","Aug","Sep","Okt","Nov","Dec"];
   const INDKOMST_KATEGORIER = ["Løn","Freelance","Gave","Investering","Refusion","Andet"];
   const UDGIFT_KATEGORIER = ["Bolig","Transport","Mad & dagligvarer","Forsikring","Abonnementer","Fritid","Tøj","Sundhed","Andet"];
+  const PALET = ["#33415C","#C97A2B","#A13D2E","#2F8F5B","#7C5CB8","#B85C7A","#8A8D93","#C9A227","#4E8FA6"];
+
+  function farveForKategori(kategorier, kategori) {
+    const idx = kategorier.indexOf(kategori);
+    return PALET[(idx >= 0 ? idx : 0) % PALET.length];
+  }
 
   let aar = new Date().getFullYear();
   let maanedIndex = new Date().getMonth();
@@ -524,7 +235,7 @@
 
   async function loadData() {
     indlaeserData = true;
-    renderLoading();
+    render();
     try {
       const snap = await getDoc(yearDocRef(aar));
       data = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
@@ -594,15 +305,84 @@
     return { ind, udg, saldo: ind - udg };
   }
 
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function iconPlus() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  }
+  function iconTrash() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  }
+  function iconChevron(dir) {
+    const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + points + '"></polyline></svg>';
+  }
+
+  function renderDonut(udgifter) {
+    const perKategori = {};
+    udgifter.forEach(p => { perKategori[p.kategori] = (perKategori[p.kategori] || 0) + p.beloeb; });
+    const rows = Object.entries(perKategori).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, r) => s + r[1], 0);
+
+    if (rows.length === 0) {
+      return `
+        <div class="bh-donut-wrap">
+          <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#EDEDEF" stroke-width="22"></circle>
+          </svg>
+          <div class="bh-empty-panel" style="flex:1;">Ingen udgifter registreret denne måned endnu.</div>
+        </div>
+      `;
+    }
+
+    const cx = 75, cy = 75, r = 58, strokeW = 22;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    const segments = rows.map(([kategori, beloeb]) => {
+      const fraction = beloeb / total;
+      const dash = fraction * circumference;
+      const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${farveForKategori(UDGIFT_KATEGORIER, kategori)}" stroke-width="${strokeW}"
+        stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"></circle>`;
+      offset += dash;
+      return seg;
+    }).join('');
+
+    const legend = rows.map(([kategori, beloeb]) => `
+      <div class="bh-legend-row">
+        <div class="bh-legend-left">
+          <span class="bh-legend-dot" style="background:${farveForKategori(UDGIFT_KATEGORIER, kategori)}"></span>
+          <span class="bh-legend-name">${escapeHtml(kategori)}</span>
+        </div>
+        <span class="bh-legend-amount">${kr(beloeb)}</span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="bh-donut-wrap">
+        <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+          ${segments}
+        </svg>
+        <div class="bh-legend">${legend}</div>
+      </div>
+    `;
+  }
+
   function renderEntryList(list, type) {
     if (list.length === 0) {
       return '<div class="bh-empty">Ingen ' + (type === 'indkomst' ? 'indtægter' : 'udgifter') + ' registreret endnu.</div>';
     }
+    const kategorier = type === 'indkomst' ? INDKOMST_KATEGORIER : UDGIFT_KATEGORIER;
     return list.map(p => `
       <div class="bh-entry">
         <div class="bh-entry-left">
-          <span class="bh-entry-badge ${type === 'indkomst' ? 'income' : 'expense'}">${escapeHtml(p.kategori)}</span>
-          ${p.beskrivelse ? '<span class="bh-entry-desc">' + escapeHtml(p.beskrivelse) + '</span>' : ''}
+          <span class="bh-entry-dot" style="background:${farveForKategori(kategorier, p.kategori)}"></span>
+          <div class="bh-entry-text">
+            <span class="bh-entry-cat">${escapeHtml(p.kategori)}</span>
+            ${p.beskrivelse ? '<span class="bh-entry-desc">' + escapeHtml(p.beskrivelse) + '</span>' : ''}
+          </div>
         </div>
         <div class="bh-entry-right">
           <span class="bh-entry-amount ${type === 'indkomst' ? 'income' : 'expense'}">${kr(p.beloeb)}</span>
@@ -629,70 +409,27 @@
     `;
   }
 
-  function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-  }
-  function iconTrash() {
-    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
-  }
-  function iconPlus() {
-    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
-  }
-  function iconChevron(dir) {
-    const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
-    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + points + '"></polyline></svg>';
-  }
-  function iconWallet() {
-    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>';
-  }
-  function iconTrendUp() {
-    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>';
-  }
-  function iconTrendDown() {
-    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>';
-  }
-
-  function renderChart() {
-    const maaneder = data.map((m, i) => ({ ...beregnMaaned(m), navn: MAANEDER_KORT[i], index: i }));
-    const maxAbs = Math.max(1, ...maaneder.map(m => Math.abs(m.saldo)));
-    const w = 900, h = 90, barW = w / 12 - 6, midY = h / 2 - 10;
-    const scale = (midY - 8) / maxAbs;
-
-    const bars = maaneder.map((m, i) => {
-      const x = i * (w / 12) + 3;
-      const barH = Math.max(2, Math.abs(m.saldo) * scale);
-      const y = m.saldo >= 0 ? midY - barH : midY;
-      const fill = i === maanedIndex ? '#B8902F' : (m.saldo >= 0 ? '#3E7D5C' : '#B04F3B');
-      return `
-        <g class="bh-chart-bar-group" onclick="skiftMaaned(${i})">
-          <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${fill}" opacity="${i === maanedIndex ? 1 : 0.85}"></rect>
-          <rect x="${x}" y="0" width="${barW}" height="${h - 14}" fill="transparent"></rect>
-          <text x="${x + barW / 2}" y="${h - 2}" text-anchor="middle" class="bh-chart-label">${m.navn}</text>
-        </g>
-      `;
-    }).join('');
-
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="90" style="display:block;"><line x1="0" y1="${midY}" x2="${w}" y2="${midY}" stroke="rgba(245,241,227,0.15)" stroke-width="1"></line>${bars}</svg>`;
-  }
-
   function renderApp() {
     const maanedData = data[maanedIndex];
     const { ind: sumIndkomst, udg: sumUdgifter, saldo } = beregnMaaned(maanedData);
-    const aarBeregn = data.map(beregnMaaned);
-    const aarSumIndkomst = aarBeregn.reduce((s, m) => s + m.ind, 0);
-    const aarSumUdgifter = aarBeregn.reduce((s, m) => s + m.udg, 0);
-    const aarSaldo = aarSumIndkomst - aarSumUdgifter;
 
     document.getElementById('app').innerHTML = `
       <div class="bh-root">
         <div class="bh-topbar">
-          ${escapeHtml(currentUser.email || '')}
-          <button class="bh-logout-btn" onclick="logUd()">Log ud</button>
+          <div class="bh-title-group">
+            <span class="bh-title">Budget-hovedbog</span>
+            <span class="bh-subtitle">${MAANEDER[maanedIndex]} ${aar}</span>
+          </div>
+          <div class="bh-user-info">
+            ${escapeHtml(currentUser.email || '')}
+            <button class="bh-logout-btn" onclick="logUd()">Log ud</button>
+          </div>
         </div>
-        <div class="bh-header">
-          <div class="bh-title">${iconWallet()} Budget-hovedbog</div>
+
+        <div class="bh-controls-row">
+          <div class="bh-month-pills">
+            ${MAANEDER_KORT.map((m, i) => `<button class="bh-pill ${i === maanedIndex ? 'active' : ''}" onclick="skiftMaaned(${i})">${m}</button>`).join('')}
+          </div>
           <div class="bh-year-nav">
             <button class="bh-year-btn" onclick="skiftAar(-1)" aria-label="Forrige år">${iconChevron('left')}</button>
             ${aar}
@@ -702,58 +439,49 @@
 
         <div class="bh-summary">
           <div class="bh-card">
-            <div class="bh-card-label">Indkomst i ${aar}</div>
-            <div class="bh-card-value pos">${kr(aarSumIndkomst)}</div>
+            <div class="bh-card-label">Indkomst</div>
+            <div class="bh-card-value pos">${kr(sumIndkomst)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
           </div>
           <div class="bh-card">
-            <div class="bh-card-label">Udgifter i ${aar}</div>
-            <div class="bh-card-value neg">${kr(aarSumUdgifter)}</div>
+            <div class="bh-card-label">Udgifter</div>
+            <div class="bh-card-value neg">${kr(sumUdgifter)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
           </div>
           <div class="bh-card">
-            <div class="bh-card-label">Saldo i ${aar}</div>
-            <div class="bh-card-value ${aarSaldo >= 0 ? 'pos' : 'neg'}">${kr(aarSaldo)}</div>
+            <div class="bh-card-label">Saldo</div>
+            <div class="bh-card-value ${saldo >= 0 ? 'pos' : 'neg'}">${kr(saldo)}</div>
+            <div class="bh-card-sub">Indkomst − udgifter</div>
           </div>
         </div>
 
-        <div class="bh-chart-wrap">${renderChart()}</div>
-
-        <div class="bh-book">
-          <div class="bh-tabs">
-            ${MAANEDER.map((m, i) => `<button class="bh-tab ${i === maanedIndex ? 'active' : ''}" onclick="skiftMaaned(${i})">${m}</button>`).join('')}
+        <div class="bh-main-grid">
+          <div class="bh-panel">
+            <div class="bh-panel-title">Udgifter efter kategori</div>
+            ${renderDonut(maanedData.udgifter)}
           </div>
 
-          <div class="bh-page">
-            <div class="bh-page-title">${MAANEDER[maanedIndex]} ${aar}</div>
-            <div class="bh-page-sub">Månedens ind- og udgifter</div>
-
-            <div class="bh-columns">
-              <div>
-                <div class="bh-col-header">
-                  <div class="bh-col-title income">${iconTrendUp()} Indtægter</div>
-                  <button class="bh-add-btn income" onclick="aabnLukForm('indkomst')">${iconPlus()} Tilføj</button>
-                </div>
-                <div class="bh-entry-list">${renderEntryList(maanedData.indkomst, 'indkomst')}</div>
-                ${aktivForm === 'indkomst' ? renderForm('indkomst') : ''}
-                <div class="bh-col-total" style="color:#2F6B4F"><span>I alt</span><span>${kr(sumIndkomst)}</span></div>
-              </div>
-
-              <div>
-                <div class="bh-col-header">
-                  <div class="bh-col-title expense">${iconTrendDown()} Udgifter</div>
-                  <button class="bh-add-btn expense" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
-                </div>
-                <div class="bh-entry-list">${renderEntryList(maanedData.udgifter, 'udgifter')}</div>
-                ${aktivForm === 'udgifter' ? renderForm('udgifter') : ''}
-                <div class="bh-col-total" style="color:#9C3D2E"><span>I alt</span><span>${kr(sumUdgifter)}</span></div>
-              </div>
+          <div class="bh-panel">
+            <div class="bh-list-header">
+              <div class="bh-list-title income">Indtægter</div>
+              <button class="bh-add-btn" onclick="aabnLukForm('indkomst')">${iconPlus()} Tilføj</button>
             </div>
-
-            <div class="bh-month-balance">
-              <span class="bh-month-balance-label">Saldo for ${MAANEDER[maanedIndex]}</span>
-              <span class="bh-month-balance-value" style="color:${saldo >= 0 ? '#2F6B4F' : '#9C3D2E'}">${kr(saldo)}</span>
-            </div>
+            <div class="bh-entry-list">${renderEntryList(maanedData.indkomst, 'indkomst')}</div>
+            ${aktivForm === 'indkomst' ? renderForm('indkomst') : ''}
+            <div class="bh-col-total" style="color:var(--green)"><span>I alt</span><span>${kr(sumIndkomst)}</span></div>
           </div>
         </div>
+
+        <div class="bh-panel">
+          <div class="bh-list-header">
+            <div class="bh-list-title expense">Udgifter</div>
+            <button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+          </div>
+          <div class="bh-entry-list">${renderEntryList(maanedData.udgifter, 'udgifter')}</div>
+          ${aktivForm === 'udgifter' ? renderForm('udgifter') : ''}
+          <div class="bh-col-total" style="color:var(--red)"><span>I alt</span><span>${kr(sumUdgifter)}</span></div>
+        </div>
+
         <div class="bh-footnote">Data gemmes i skyen og følger din konto på tværs af enheder.</div>
       </div>
     `;
@@ -767,7 +495,7 @@
     document.getElementById('app').innerHTML = `
       <div class="bh-root">
         <div class="bh-auth-wrap">
-          <div class="bh-auth-title">${iconWallet()} Budget-hovedbog</div>
+          <div class="bh-auth-title">Budget-hovedbog</div>
           <div class="bh-auth-sub">${loginTilstand === 'login' ? 'Log ind for at se dit budget' : 'Opret en konto for at komme i gang'}</div>
           <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
           <input type="password" id="auth-password" placeholder="Adgangskode (mindst 6 tegn)" autocomplete="current-password" onkeydown="if(event.key==='Enter'){${loginTilstand === 'login' ? 'forsoegLogin' : 'forsoegOpretKonto'}()}">
@@ -785,7 +513,7 @@
 
   function renderLoading() {
     document.getElementById('app').innerHTML = `
-      <div class="bh-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:#F5F1E3;font-family:'Inter',sans-serif;">
+      <div class="bh-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);">
         Henter dit budget…
       </div>
     `;
