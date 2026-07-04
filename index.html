@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget-hovedbog</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --paper: #EFEAD9;
+    --paper-line: rgba(42,37,33,0.08);
+    --navy: #1E2A38;
+    --green: #2F6B4F;
+    --green-bg: rgba(47,107,79,0.10);
+    --rust: #9C3D2E;
+    --rust-bg: rgba(156,61,46,0.10);
+    --gold: #B8902F;
+    --ink: #2A2521;
+    --ink-soft: rgba(42,37,33,0.62);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 14px;
+    background: #0F1620;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .bh-root {
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    background: var(--navy);
+    border-radius: 18px;
+    padding: 18px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .bh-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 18px 14px;
+    color: #F5F1E3;
+  }
+  .bh-title {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bh-title svg { flex-shrink: 0; }
+  .bh-year-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+  }
+  .bh-year-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #F5F1E3;
+    border-radius: 8px;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .bh-year-btn:hover { background: rgba(255,255,255,0.16); }
+
+  .bh-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 0 14px 16px 14px;
+  }
+  .bh-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .bh-card-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(245,241,227,0.55);
+    margin-bottom: 4px;
+  }
+  .bh-card-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 19px;
+    font-weight: 600;
+    color: #F5F1E3;
+  }
+  .bh-card-value.pos { color: #7FC29B; }
+  .bh-card-value.neg { color: #E08A78; }
+
+  .bh-chart-wrap {
+    padding: 4px 14px 16px 14px;
+  }
+  .bh-chart-bar-group { cursor: pointer; }
+  .bh-chart-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    fill: rgba(245,241,227,0.55);
+  }
+
+  .bh-book {
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 4px;
+    display: flex;
+    gap: 0;
+    min-height: 480px;
+  }
+
+  .bh-tabs {
+    display: flex;
+    flex-direction: column;
+    padding: 14px 6px 14px 10px;
+    gap: 2px;
+    min-width: 92px;
+  }
+  .bh-tab {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: transparent;
+    border: none;
+    border-right: 3px solid transparent;
+    text-align: left;
+    padding: 7px 10px;
+    border-radius: 6px 0 0 6px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    width: 100%;
+  }
+  .bh-tab:hover { background: rgba(42,37,33,0.05); color: var(--ink); }
+  .bh-tab.active {
+    background: #fff;
+    color: var(--ink);
+    font-weight: 600;
+    border-right: 3px solid var(--gold);
+    box-shadow: -2px 2px 6px rgba(42,37,33,0.06);
+  }
+
+  .bh-page {
+    flex: 1;
+    background: repeating-linear-gradient(
+      to bottom,
+      #fff 0px, #fff 33px, var(--paper-line) 34px, #fff 35px
+    );
+    border-radius: 4px 12px 12px 4px;
+    padding: 20px 22px;
+    box-shadow: -6px 0 14px rgba(42,37,33,0.05) inset;
+    min-width: 0;
+  }
+
+  .bh-page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .bh-page-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+
+  .bh-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 680px) {
+    .bh-columns { grid-template-columns: 1fr; }
+    .bh-summary { grid-template-columns: 1fr; }
+    .bh-book { flex-direction: column; }
+    .bh-tabs { flex-direction: row; overflow-x: auto; min-width: 0; }
+    .bh-tab.active { border-right: none; border-bottom: 3px solid var(--gold); }
+  }
+
+  .bh-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .bh-col-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bh-col-title.income { color: var(--green); }
+  .bh-col-title.expense { color: var(--rust); }
+
+  .bh-add-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1px solid;
+    background: transparent;
+    border-radius: 7px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .bh-add-btn.income { color: var(--green); border-color: var(--green); }
+  .bh-add-btn.income:hover { background: var(--green-bg); }
+  .bh-add-btn.expense { color: var(--rust); border-color: var(--rust); }
+  .bh-add-btn.expense:hover { background: var(--rust-bg); }
+
+  .bh-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 40px;
+    margin-bottom: 8px;
+  }
+  .bh-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 9px;
+    border-radius: 8px;
+    background: rgba(42,37,33,0.03);
+    gap: 8px;
+  }
+  .bh-entry-left {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .bh-entry-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    width: fit-content;
+    padding: 1px 6px;
+    border-radius: 5px;
+    margin-bottom: 2px;
+  }
+  .bh-entry-badge.income { background: var(--green-bg); color: var(--green); }
+  .bh-entry-badge.expense { background: var(--rust-bg); color: var(--rust); }
+  .bh-entry-desc {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bh-entry-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .bh-entry-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .bh-entry-amount.income { color: var(--green); }
+  .bh-entry-amount.expense { color: var(--rust); }
+  .bh-del-btn {
+    background: transparent;
+    border: none;
+    color: rgba(42,37,33,0.28);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    display: flex;
+  }
+  .bh-del-btn:hover { color: var(--rust); background: var(--rust-bg); }
+
+  .bh-empty {
+    font-size: 12.5px;
+    color: rgba(42,37,33,0.35);
+    font-style: italic;
+    padding: 8px 2px;
+  }
+
+  .bh-col-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1.5px solid rgba(42,37,33,0.12);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  .bh-form {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(184,144,47,0.07);
+    border: 1px solid rgba(184,144,47,0.25);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bh-form select, .bh-form input {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    padding: 7px 9px;
+    border-radius: 7px;
+    border: 1px solid rgba(42,37,33,0.18);
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+    width: 100%;
+  }
+  .bh-form select:focus, .bh-form input:focus {
+    border-color: var(--gold);
+  }
+  .bh-form-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .bh-form-actions button {
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    border: none;
+  }
+  .bh-submit-btn { background: var(--ink); color: #fff; }
+  .bh-submit-btn:hover { background: #000; }
+  .bh-cancel-btn { background: transparent; color: var(--ink-soft); border: 1px solid rgba(42,37,33,0.18) !important; }
+  .bh-cancel-btn:hover { background: rgba(42,37,33,0.05); }
+
+  .bh-month-balance {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1.5px solid rgba(42,37,33,0.12);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .bh-month-balance-label {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  .bh-month-balance-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .bh-footnote {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(245,241,227,0.35);
+    padding: 14px 0 4px 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* --- Login / auth --- */
+  .bh-auth-wrap {
+    max-width: 380px;
+    margin: 60px auto;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    padding: 28px;
+    color: #F5F1E3;
+  }
+  .bh-auth-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .bh-auth-sub {
+    font-size: 12.5px;
+    color: rgba(245,241,227,0.55);
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .bh-auth-wrap input {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: #F5F1E3;
+    outline: none;
+    margin-bottom: 10px;
+  }
+  .bh-auth-wrap input:focus { border-color: var(--gold); }
+  .bh-auth-wrap input::placeholder { color: rgba(245,241,227,0.35); }
+  .bh-auth-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .bh-auth-actions button {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+  }
+  .bh-auth-primary { background: var(--gold); color: #1E2A38; }
+  .bh-auth-primary:hover { background: #cba13a; }
+  .bh-auth-secondary { background: transparent; color: #F5F1E3; border: 1px solid rgba(255,255,255,0.2) !important; }
+  .bh-auth-secondary:hover { background: rgba(255,255,255,0.08); }
+  .bh-auth-error {
+    font-size: 12.5px;
+    color: #E08A78;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .bh-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 4px 4px 0 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: rgba(245,241,227,0.5);
+  }
+  .bh-logout-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #F5F1E3;
+    border-radius: 7px;
+    padding: 4px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    cursor: pointer;
+  }
+  .bh-logout-btn:hover { background: rgba(255,255,255,0.16); }
+  .bh-sync-note {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(245,241,227,0.35);
+    padding: 2px 0 4px 0;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBskAOIQBWL66RASn42hkxVOG-weS6J2pM",
+    authDomain: "budget-fdb92.firebaseapp.com",
+    projectId: "budget-fdb92",
+    storageBucket: "budget-fdb92.firebasestorage.app",
+    messagingSenderId: "194173573170",
+    appId: "1:194173573170:web:62f2c00ef9801580db042b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  const MAANEDER = ["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"];
+  const MAANEDER_KORT = ["Jan","Feb","Mar","Apr","Maj","Jun","Jul","Aug","Sep","Okt","Nov","Dec"];
+  const INDKOMST_KATEGORIER = ["Løn","Freelance","Gave","Investering","Refusion","Andet"];
+  const UDGIFT_KATEGORIER = ["Bolig","Transport","Mad & dagligvarer","Forsikring","Abonnementer","Fritid","Tøj","Sundhed","Andet"];
+
+  let aar = new Date().getFullYear();
+  let maanedIndex = new Date().getMonth();
+  let data = null;
+  let aktivForm = null; // 'indkomst' | 'udgifter' | null
+
+  function kr(n) {
+    return new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK', maximumFractionDigits: 0 }).format(n || 0);
+  }
+  function uid() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+  function tomMaaned() { return { indkomst: [], udgifter: [] }; }
+  function tomtAar() { return Array.from({ length: 12 }, () => tomMaaned()); }
+
+  function yearDocRef(year) {
+    return doc(db, 'budget', currentUser.uid, 'years', String(year));
+  }
+
+  let indlaeserData = false;
+
+  async function loadData() {
+    indlaeserData = true;
+    renderLoading();
+    try {
+      const snap = await getDoc(yearDocRef(aar));
+      data = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
+    } catch (e) {
+      console.error('Kunne ikke hente budgetdata:', e);
+      data = tomtAar();
+    } finally {
+      indlaeserData = false;
+      render();
+    }
+  }
+  async function saveData() {
+    try {
+      await setDoc(yearDocRef(aar), { months: data });
+    } catch (e) {
+      console.error('Kunne ikke gemme budgetdata:', e);
+      alert('Kunne ikke gemme ændringen. Tjek din internetforbindelse og prøv igen.');
+    }
+  }
+
+  function skiftAar(delta) {
+    aar += delta;
+    aktivForm = null;
+    loadData();
+  }
+  function skiftMaaned(i) {
+    maanedIndex = i;
+    aktivForm = null;
+    render();
+  }
+  function aabnLukForm(type) {
+    aktivForm = aktivForm === type ? null : type;
+    render();
+    if (aktivForm) {
+      const first = document.querySelector('.bh-form select');
+      if (first) first.focus();
+    }
+  }
+  function tilfoejPost(type) {
+    const kategoriEl = document.getElementById('form-kategori');
+    const beskrivelseEl = document.getElementById('form-beskrivelse');
+    const beloebEl = document.getElementById('form-beloeb');
+    if (!kategoriEl || !beloebEl) return;
+    const beloeb = parseFloat(beloebEl.value.replace(',', '.'));
+    if (!beloeb || beloeb <= 0) {
+      beloebEl.focus();
+      return;
+    }
+    const post = { id: uid(), kategori: kategoriEl.value, beskrivelse: (beskrivelseEl.value || '').trim(), beloeb: beloeb };
+    data[maanedIndex][type].push(post);
+    aktivForm = null;
+    saveData();
+    render();
+  }
+  function sletPost(type, id) {
+    data[maanedIndex][type] = data[maanedIndex][type].filter(p => p.id !== id);
+    saveData();
+    render();
+  }
+  function handleBeloebKeydown(e, type) {
+    if (e.key === 'Enter') tilfoejPost(type);
+  }
+
+  function beregnMaaned(m) {
+    const ind = m.indkomst.reduce((s, p) => s + p.beloeb, 0);
+    const udg = m.udgifter.reduce((s, p) => s + p.beloeb, 0);
+    return { ind, udg, saldo: ind - udg };
+  }
+
+  function renderEntryList(list, type) {
+    if (list.length === 0) {
+      return '<div class="bh-empty">Ingen ' + (type === 'indkomst' ? 'indtægter' : 'udgifter') + ' registreret endnu.</div>';
+    }
+    return list.map(p => `
+      <div class="bh-entry">
+        <div class="bh-entry-left">
+          <span class="bh-entry-badge ${type === 'indkomst' ? 'income' : 'expense'}">${escapeHtml(p.kategori)}</span>
+          ${p.beskrivelse ? '<span class="bh-entry-desc">' + escapeHtml(p.beskrivelse) + '</span>' : ''}
+        </div>
+        <div class="bh-entry-right">
+          <span class="bh-entry-amount ${type === 'indkomst' ? 'income' : 'expense'}">${kr(p.beloeb)}</span>
+          <button class="bh-del-btn" onclick="sletPost('${type}','${p.id}')" aria-label="Slet">${iconTrash()}</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderForm(type) {
+    const kategorier = type === 'indkomst' ? INDKOMST_KATEGORIER : UDGIFT_KATEGORIER;
+    return `
+      <div class="bh-form">
+        <select id="form-kategori">
+          ${kategorier.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')}
+        </select>
+        <input type="text" id="form-beskrivelse" placeholder="Beskrivelse (valgfri)">
+        <input type="text" id="form-beloeb" inputmode="decimal" placeholder="Beløb, fx 1250" onkeydown="handleBeloebKeydown(event, '${type}')">
+        <div class="bh-form-actions">
+          <button class="bh-submit-btn" onclick="tilfoejPost('${type}')">Gem post</button>
+          <button class="bh-cancel-btn" onclick="aabnLukForm('${type}')">Annuller</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function iconTrash() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  }
+  function iconPlus() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  }
+  function iconChevron(dir) {
+    const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + points + '"></polyline></svg>';
+  }
+  function iconWallet() {
+    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>';
+  }
+  function iconTrendUp() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>';
+  }
+  function iconTrendDown() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>';
+  }
+
+  function renderChart() {
+    const maaneder = data.map((m, i) => ({ ...beregnMaaned(m), navn: MAANEDER_KORT[i], index: i }));
+    const maxAbs = Math.max(1, ...maaneder.map(m => Math.abs(m.saldo)));
+    const w = 900, h = 90, barW = w / 12 - 6, midY = h / 2 - 10;
+    const scale = (midY - 8) / maxAbs;
+
+    const bars = maaneder.map((m, i) => {
+      const x = i * (w / 12) + 3;
+      const barH = Math.max(2, Math.abs(m.saldo) * scale);
+      const y = m.saldo >= 0 ? midY - barH : midY;
+      const fill = i === maanedIndex ? '#B8902F' : (m.saldo >= 0 ? '#3E7D5C' : '#B04F3B');
+      return `
+        <g class="bh-chart-bar-group" onclick="skiftMaaned(${i})">
+          <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${fill}" opacity="${i === maanedIndex ? 1 : 0.85}"></rect>
+          <rect x="${x}" y="0" width="${barW}" height="${h - 14}" fill="transparent"></rect>
+          <text x="${x + barW / 2}" y="${h - 2}" text-anchor="middle" class="bh-chart-label">${m.navn}</text>
+        </g>
+      `;
+    }).join('');
+
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="90" style="display:block;"><line x1="0" y1="${midY}" x2="${w}" y2="${midY}" stroke="rgba(245,241,227,0.15)" stroke-width="1"></line>${bars}</svg>`;
+  }
+
+  function renderApp() {
+    const maanedData = data[maanedIndex];
+    const { ind: sumIndkomst, udg: sumUdgifter, saldo } = beregnMaaned(maanedData);
+    const aarBeregn = data.map(beregnMaaned);
+    const aarSumIndkomst = aarBeregn.reduce((s, m) => s + m.ind, 0);
+    const aarSumUdgifter = aarBeregn.reduce((s, m) => s + m.udg, 0);
+    const aarSaldo = aarSumIndkomst - aarSumUdgifter;
+
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root">
+        <div class="bh-topbar">
+          ${escapeHtml(currentUser.email || '')}
+          <button class="bh-logout-btn" onclick="logUd()">Log ud</button>
+        </div>
+        <div class="bh-header">
+          <div class="bh-title">${iconWallet()} Budget-hovedbog</div>
+          <div class="bh-year-nav">
+            <button class="bh-year-btn" onclick="skiftAar(-1)" aria-label="Forrige år">${iconChevron('left')}</button>
+            ${aar}
+            <button class="bh-year-btn" onclick="skiftAar(1)" aria-label="Næste år">${iconChevron('right')}</button>
+          </div>
+        </div>
+
+        <div class="bh-summary">
+          <div class="bh-card">
+            <div class="bh-card-label">Indkomst i ${aar}</div>
+            <div class="bh-card-value pos">${kr(aarSumIndkomst)}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Udgifter i ${aar}</div>
+            <div class="bh-card-value neg">${kr(aarSumUdgifter)}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Saldo i ${aar}</div>
+            <div class="bh-card-value ${aarSaldo >= 0 ? 'pos' : 'neg'}">${kr(aarSaldo)}</div>
+          </div>
+        </div>
+
+        <div class="bh-chart-wrap">${renderChart()}</div>
+
+        <div class="bh-book">
+          <div class="bh-tabs">
+            ${MAANEDER.map((m, i) => `<button class="bh-tab ${i === maanedIndex ? 'active' : ''}" onclick="skiftMaaned(${i})">${m}</button>`).join('')}
+          </div>
+
+          <div class="bh-page">
+            <div class="bh-page-title">${MAANEDER[maanedIndex]} ${aar}</div>
+            <div class="bh-page-sub">Månedens ind- og udgifter</div>
+
+            <div class="bh-columns">
+              <div>
+                <div class="bh-col-header">
+                  <div class="bh-col-title income">${iconTrendUp()} Indtægter</div>
+                  <button class="bh-add-btn income" onclick="aabnLukForm('indkomst')">${iconPlus()} Tilføj</button>
+                </div>
+                <div class="bh-entry-list">${renderEntryList(maanedData.indkomst, 'indkomst')}</div>
+                ${aktivForm === 'indkomst' ? renderForm('indkomst') : ''}
+                <div class="bh-col-total" style="color:#2F6B4F"><span>I alt</span><span>${kr(sumIndkomst)}</span></div>
+              </div>
+
+              <div>
+                <div class="bh-col-header">
+                  <div class="bh-col-title expense">${iconTrendDown()} Udgifter</div>
+                  <button class="bh-add-btn expense" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+                </div>
+                <div class="bh-entry-list">${renderEntryList(maanedData.udgifter, 'udgifter')}</div>
+                ${aktivForm === 'udgifter' ? renderForm('udgifter') : ''}
+                <div class="bh-col-total" style="color:#9C3D2E"><span>I alt</span><span>${kr(sumUdgifter)}</span></div>
+              </div>
+            </div>
+
+            <div class="bh-month-balance">
+              <span class="bh-month-balance-label">Saldo for ${MAANEDER[maanedIndex]}</span>
+              <span class="bh-month-balance-value" style="color:${saldo >= 0 ? '#2F6B4F' : '#9C3D2E'}">${kr(saldo)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="bh-footnote">Data gemmes i skyen og følger din konto på tværs af enheder.</div>
+      </div>
+    `;
+  }
+
+  /* --- Auth-skærm --- */
+  let loginFejl = '';
+  let loginTilstand = 'login'; // 'login' | 'opret'
+
+  function renderAuthScreen() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root">
+        <div class="bh-auth-wrap">
+          <div class="bh-auth-title">${iconWallet()} Budget-hovedbog</div>
+          <div class="bh-auth-sub">${loginTilstand === 'login' ? 'Log ind for at se dit budget' : 'Opret en konto for at komme i gang'}</div>
+          <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="auth-password" placeholder="Adgangskode (mindst 6 tegn)" autocomplete="current-password" onkeydown="if(event.key==='Enter'){${loginTilstand === 'login' ? 'forsoegLogin' : 'forsoegOpretKonto'}()}">
+          <div class="bh-auth-actions">
+            ${loginTilstand === 'login'
+              ? '<button class="bh-auth-primary" onclick="forsoegLogin()">Log ind</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'opret\')">Opret konto</button>'
+              : '<button class="bh-auth-primary" onclick="forsoegOpretKonto()">Opret konto</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'login\')">Log ind i stedet</button>'
+            }
+          </div>
+          ${loginFejl ? '<div class="bh-auth-error">' + escapeHtml(loginFejl) + '</div>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLoading() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:#F5F1E3;font-family:'Inter',sans-serif;">
+        Henter dit budget…
+      </div>
+    `;
+  }
+
+  function skiftLoginTilstand(t) {
+    loginTilstand = t;
+    loginFejl = '';
+    renderAuthScreen();
+  }
+
+  function oversaetAuthFejl(kode) {
+    const fejl = {
+      'auth/invalid-email': 'Email-adressen ser ikke rigtig ud.',
+      'auth/user-not-found': 'Der findes ingen konto med den email.',
+      'auth/wrong-password': 'Forkert adgangskode.',
+      'auth/invalid-credential': 'Forkert email eller adgangskode.',
+      'auth/email-already-in-use': 'Der findes allerede en konto med den email.',
+      'auth/weak-password': 'Adgangskoden skal være mindst 6 tegn.',
+      'auth/too-many-requests': 'For mange forsøg. Prøv igen om lidt.'
+    };
+    return fejl[kode] || 'Der skete en fejl. Prøv igen.';
+  }
+
+  window.forsoegLogin = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.forsoegOpretKonto = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.logUd = async function () {
+    aktivForm = null;
+    data = null;
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+      loginFejl = '';
+      loadData();
+    } else {
+      render();
+    }
+  });
+
+  function render() {
+    if (!currentUser) { renderAuthScreen(); return; }
+    if (indlaeserData || !data) { renderLoading(); return; }
+    renderApp();
+  }
+
+  window.skiftAar = skiftAar;
+  window.skiftMaaned = skiftMaaned;
+  window.aabnLukForm = aabnLukForm;
+  window.tilfoejPost = tilfoejPost;
+  window.sletPost = sletPost;
+  window.handleBeloebKeydown = handleBeloebKeydown;
+  window.skiftLoginTilstand = skiftLoginTilstand;
+</script>
+</body>
+</html>
