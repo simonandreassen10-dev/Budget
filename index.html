@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inconsolata:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #F0F1F3;
+    --card: #FFFFFF;
+    --border: #E5E6EA;
+    --text: #1C1E21;
+    --text-muted: #767A82;
+    --text-faint: #9CA0A8;
+    --green: #2F8F5B;
+    --red: #C0553B;
+    --navy: #33415C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 14px;
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .bh-root { max-width: 1040px; margin: 0 auto; }
+
+  .bh-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .bh-title-group { display: flex; align-items: baseline; gap: 10px; }
+  .bh-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-subtitle { font-size: 13px; color: var(--text-muted); }
+  .bh-user-info { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-muted); }
+  .bh-logout-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; padding: 6px 12px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .bh-logout-btn:hover { background: #F5F5F6; }
+
+  .bh-controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .bh-month-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .bh-pill {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; cursor: pointer; white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .bh-pill:hover { background: #F5F5F6; }
+  .bh-pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .bh-year-nav {
+    display: flex; align-items: center; gap: 8px; font-family: 'Inconsolata', monospace;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .bh-year-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer;
+  }
+  .bh-year-btn:hover { background: #F5F5F6; }
+
+  .bh-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .bh-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .bh-card-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 600; margin-bottom: 6px;
+  }
+  .bh-card-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-card-value.pos { color: var(--green); }
+  .bh-card-value.neg { color: var(--red); }
+  .bh-card-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
+
+  .bh-main-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 780px) {
+    .bh-main-grid { grid-template-columns: 1fr; }
+    .bh-summary { grid-template-columns: 1fr; }
+  }
+
+  .bh-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+  .bh-panel-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+  }
+
+  .bh-donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .bh-donut-svg { flex-shrink: 0; }
+  .bh-legend { display: flex; flex-direction: column; gap: 7px; width: 100%; max-height: 210px; overflow-y: auto; }
+  .bh-legend-row { display: flex; align-items: center; justify-content: space-between; font-size: 14.5px; gap: 8px; }
+  .bh-legend-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .bh-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-legend-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-legend-amount { font-family: 'Inconsolata', monospace; font-size: 15px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  .bh-empty-panel { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 20px 0; text-align: center; }
+
+  .bh-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .bh-list-title { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .bh-list-title.income { color: var(--green); }
+  .bh-list-title.expense { color: var(--red); }
+
+  .bh-add-btn {
+    display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 7px; padding: 5px 11px; cursor: pointer; transition: all 0.12s ease;
+  }
+  .bh-add-btn:hover { background: #E9E9EC; }
+
+  .bh-entry-list { display: flex; flex-direction: column; gap: 6px; min-height: 30px; margin-bottom: 8px; }
+  .bh-entry { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--bg); gap: 8px; }
+  .bh-entry-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bh-entry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-entry-text { display: flex; flex-direction: column; min-width: 0; }
+  .bh-entry-cat { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .bh-entry-desc { font-size: 13px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .bh-entry-amount { font-family: 'Inconsolata', monospace; font-size: 15px; font-weight: 700; }
+  .bh-entry-amount.income { color: var(--green); }
+  .bh-entry-amount.expense { color: var(--red); }
+  .bh-del-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; opacity: 0; transition: opacity 0.12s ease; }
+  .bh-del-btn:hover { color: var(--red); background: #F3E3DF; }
+  .bh-edit-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; opacity: 0; transition: opacity 0.12s ease; }
+  .bh-edit-btn:hover { color: var(--navy); background: #E7E9EE; }
+  .bh-entry:hover .bh-edit-btn, .bh-entry:hover .bh-del-btn,
+  .bh-entry:focus-within .bh-edit-btn, .bh-entry:focus-within .bh-del-btn,
+  .bh-entry.redigeres .bh-edit-btn, .bh-entry.redigeres .bh-del-btn {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .bh-edit-btn, .bh-del-btn { opacity: 1; }
+  }
+  .bh-entry.redigeres { outline: 2px solid var(--navy); outline-offset: -1px; }
+
+  .bh-empty { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 10px 2px; }
+
+  .bh-col-total {
+    display: flex; justify-content: space-between; padding-top: 10px; margin-top: 4px;
+    border-top: 1px solid var(--border); font-family: 'Inconsolata', monospace; font-size: 13.5px; font-weight: 700;
+  }
+
+  .bh-form {
+    margin: 4px 0 12px 0; padding: 10px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 10px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .bh-form select, .bh-form input {
+    font-family: 'Inter', sans-serif; font-size: 13px; padding: 8px 10px; border-radius: 7px;
+    border: 1px solid var(--border); background: #fff; color: var(--text); outline: none; width: 100%;
+  }
+  .bh-form select:focus, .bh-form input:focus { border-color: var(--navy); }
+  .bh-form-actions { display: flex; gap: 8px; }
+  .bh-form-actions button {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; padding: 7px 12px;
+    border-radius: 7px; cursor: pointer; border: none;
+  }
+  .bh-submit-btn { background: var(--text); color: #fff; }
+  .bh-submit-btn:hover { background: #000; }
+  .bh-cancel-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border) !important; }
+  .bh-cancel-btn:hover { background: #F5F5F6; }
+
+  .bh-footnote { text-align: center; font-size: 11px; color: var(--text-faint); padding: 10px 0 4px 0; font-family: 'Inconsolata', monospace; }
+
+  .bh-auth-wrap { max-width: 380px; margin: 70px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+  .bh-auth-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .bh-auth-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; }
+  .bh-auth-wrap input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; margin-bottom: 10px;
+  }
+  .bh-auth-wrap input:focus { border-color: var(--navy); }
+  .bh-auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .bh-auth-actions button { flex: 1; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; border: none; }
+  .bh-auth-primary { background: var(--navy); color: #fff; }
+  .bh-auth-primary:hover { background: #263048; }
+  .bh-auth-secondary { background: transparent; color: var(--text); border: 1px solid var(--border) !important; }
+  .bh-auth-secondary:hover { background: #F5F5F6; }
+  .bh-auth-error { font-size: 12.5px; color: var(--red); margin-top: 10px; }
+
+  .bh-undo-btn {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 9px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+  .bh-undo-btn:hover { background: #263048; }
+  @media (max-width: 780px) {
+    .bh-undo-btn { top: 10px; right: 10px; padding: 8px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBskAOIQBWL66RASn42hkxVOG-weS6J2pM",
+    authDomain: "budget-fdb92.firebaseapp.com",
+    projectId: "budget-fdb92",
+    storageBucket: "budget-fdb92.firebasestorage.app",
+    messagingSenderId: "194173573170",
+    appId: "1:194173573170:web:62f2c00ef9801580db042b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  const MAANEDER = ["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"];
+  const MAANEDER_KORT = ["Jan","Feb","Mar","Apr","Maj","Jun","Jul","Aug","Sep","Okt","Nov","Dec"];
+  const INDKOMST_KATEGORIER = ["Løn","Gave","Investering","Refusion","Udbytte","Andet"];
+  const UDGIFT_KATEGORIER = ["Bolig","Transport","Mad & dagligvarer","Forsikring","Abonnementer","Fritid","Tøj","Sundhed","Investering","Opsparing","Andet"];
+  const PALET = ["#33415C","#C97A2B","#A13D2E","#2F8F5B","#7C5CB8","#B85C7A","#8A8D93","#C9A227","#4E8FA6","#6B8E4E","#9B5DE5"];
+
+  function farveForKategori(kategorier, kategori) {
+    const idx = kategorier.indexOf(kategori);
+    return PALET[(idx >= 0 ? idx : 0) % PALET.length];
+  }
+
+  let aar = new Date().getFullYear();
+  let maanedIndex = 0; // start altid i Januar
+  let data = null;
+  let aktivForm = null; // 'indkomst' | 'udgifter' | null
+  let redigererId = null; // id of entry currently being edited, or null
+  let visning = 'maaned'; // 'maaned' | 'oversigt'
+  let sidsteHandling = null; // { type, entry, maanedIndex, indexIListe } for fortryd-knappen
+
+  function kr(n) {
+    return new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK', maximumFractionDigits: 0 }).format(n || 0);
+  }
+  function uid() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+  function tomMaaned() { return { indkomst: [], udgifter: [] }; }
+  function tomtAar() { return Array.from({ length: 12 }, () => tomMaaned()); }
+
+  function yearDocRef(year) {
+    return doc(db, 'budget', currentUser.uid, 'years', String(year));
+  }
+
+  let indlaeserData = false;
+
+  async function loadData() {
+    indlaeserData = true;
+    render();
+    try {
+      const snap = await getDoc(yearDocRef(aar));
+      data = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
+    } catch (e) {
+      console.error('Kunne ikke hente budgetdata:', e);
+      data = tomtAar();
+    } finally {
+      indlaeserData = false;
+      render();
+    }
+  }
+  async function saveData() {
+    try {
+      await setDoc(yearDocRef(aar), { months: data });
+    } catch (e) {
+      console.error('Kunne ikke gemme budgetdata:', e);
+      alert('Kunne ikke gemme ændringen. Tjek din internetforbindelse og prøv igen.');
+    }
+  }
+
+  function skiftAar(delta) {
+    aar += delta;
+    aktivForm = null;
+    sidsteHandling = null;
+    loadData();
+  }
+  function skiftMaaned(i) {
+    maanedIndex = i;
+    visning = 'maaned';
+    aktivForm = null;
+    sidsteHandling = null;
+    render();
+  }
+  function skiftVisning(v) {
+    visning = v;
+    aktivForm = null;
+    redigererId = null;
+    sidsteHandling = null;
+    render();
+  }
+  function aabnLukForm(type) {
+    aktivForm = aktivForm === type && redigererId === null ? null : type;
+    redigererId = null;
+    render();
+    if (aktivForm) {
+      const first = document.querySelector('.bh-form select');
+      if (first) first.focus();
+    }
+  }
+  function lukForm() {
+    aktivForm = null;
+    redigererId = null;
+    render();
+  }
+  function startRediger(type, id) {
+    const entry = data[maanedIndex][type].find(p => p.id === id);
+    if (!entry) return;
+    aktivForm = type;
+    redigererId = id;
+    render();
+    const kategoriEl = document.getElementById('form-kategori');
+    const beskrivelseEl = document.getElementById('form-beskrivelse');
+    const beloebEl = document.getElementById('form-beloeb');
+    if (kategoriEl) kategoriEl.value = entry.kategori;
+    if (beskrivelseEl) beskrivelseEl.value = entry.beskrivelse || '';
+    if (beloebEl) { beloebEl.value = String(entry.beloeb).replace('.', ','); beloebEl.focus(); }
+  }
+  function tilfoejPost(type) {
+    const kategoriEl = document.getElementById('form-kategori');
+    const beskrivelseEl = document.getElementById('form-beskrivelse');
+    const beloebEl = document.getElementById('form-beloeb');
+    if (!kategoriEl || !beloebEl) return;
+    const beloeb = parseFloat(beloebEl.value.replace(',', '.'));
+    if (!beloeb || beloeb <= 0) {
+      beloebEl.focus();
+      return;
+    }
+    if (redigererId) {
+      const entry = data[maanedIndex][type].find(p => p.id === redigererId);
+      if (entry) {
+        sidsteHandling = { handling: 'rediger', type, id: entry.id, forrigeEntry: { ...entry }, maanedIndex };
+        entry.kategori = kategoriEl.value;
+        entry.beskrivelse = (beskrivelseEl.value || '').trim();
+        entry.beloeb = beloeb;
+      }
+    } else {
+      const post = { id: uid(), kategori: kategoriEl.value, beskrivelse: (beskrivelseEl.value || '').trim(), beloeb: beloeb };
+      data[maanedIndex][type].push(post);
+    }
+    aktivForm = null;
+    redigererId = null;
+    saveData();
+    render();
+  }
+  function sletPost(type, id) {
+    const entry = data[maanedIndex][type].find(p => p.id === id);
+    if (!entry) return;
+    sidsteHandling = { handling: 'slet', type, entry: { ...entry }, maanedIndex };
+    data[maanedIndex][type] = data[maanedIndex][type].filter(p => p.id !== id);
+    saveData();
+    render();
+  }
+  function fortryd() {
+    if (!sidsteHandling) return;
+    const { handling, type, maanedIndex: m } = sidsteHandling;
+    if (handling === 'slet') {
+      data[m][type].push(sidsteHandling.entry);
+    } else if (handling === 'rediger') {
+      const entry = data[m][type].find(p => p.id === sidsteHandling.id);
+      if (entry) {
+        entry.kategori = sidsteHandling.forrigeEntry.kategori;
+        entry.beskrivelse = sidsteHandling.forrigeEntry.beskrivelse;
+        entry.beloeb = sidsteHandling.forrigeEntry.beloeb;
+      }
+    }
+    sidsteHandling = null;
+    saveData();
+    render();
+  }
+  function handleBeloebKeydown(e, type) {
+    if (e.key === 'Enter') tilfoejPost(type);
+  }
+
+  function beregnMaaned(m) {
+    const ind = m.indkomst.reduce((s, p) => s + p.beloeb, 0);
+    const udg = m.udgifter.reduce((s, p) => s + p.beloeb, 0);
+    return { ind, udg, saldo: ind - udg };
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function iconPlus() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  }
+  function iconTrash() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  }
+  function iconPencil() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>';
+  }
+  function iconChevron(dir) {
+    const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + points + '"></polyline></svg>';
+  }
+  function iconUndo() {
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 7"></path></svg>';
+  }
+
+  function renderDonut(udgifter) {
+    const perKategori = {};
+    udgifter.forEach(p => { perKategori[p.kategori] = (perKategori[p.kategori] || 0) + p.beloeb; });
+    const rows = Object.entries(perKategori).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, r) => s + r[1], 0);
+
+    if (rows.length === 0) {
+      return `
+        <div class="bh-donut-wrap">
+          <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#EDEDEF" stroke-width="22"></circle>
+          </svg>
+          <div class="bh-empty-panel" style="flex:1;">Ingen udgifter registreret denne måned endnu.</div>
+        </div>
+      `;
+    }
+
+    const cx = 75, cy = 75, r = 58, strokeW = 22;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    const segments = rows.map(([kategori, beloeb]) => {
+      const fraction = beloeb / total;
+      const dash = fraction * circumference;
+      const procent = Math.round(fraction * 100);
+      const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${farveForKategori(UDGIFT_KATEGORIER, kategori)}" stroke-width="${strokeW}"
+        stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"><title>${escapeHtml(kategori)}: ${kr(beloeb)} (${procent}%)</title></circle>`;
+      offset += dash;
+      return seg;
+    }).join('');
+
+    const legend = rows.map(([kategori, beloeb]) => `
+      <div class="bh-legend-row">
+        <div class="bh-legend-left">
+          <span class="bh-legend-dot" style="background:${farveForKategori(UDGIFT_KATEGORIER, kategori)}"></span>
+          <span class="bh-legend-name">${escapeHtml(kategori)}</span>
+        </div>
+        <span class="bh-legend-amount">${kr(beloeb)} <span style="color:var(--text-faint);font-weight:500;">(${Math.round((beloeb / total) * 100)}%)</span></span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="bh-donut-wrap">
+        <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+          ${segments}
+        </svg>
+        <div class="bh-legend">${legend}</div>
+      </div>
+    `;
+  }
+
+  function renderEntryList(list, type) {
+    if (list.length === 0) {
+      return '<div class="bh-empty">Ingen ' + (type === 'indkomst' ? 'indtægter' : 'udgifter') + ' registreret endnu.</div>';
+    }
+    const kategorier = type === 'indkomst' ? INDKOMST_KATEGORIER : UDGIFT_KATEGORIER;
+    return list.map(p => `
+      <div class="bh-entry ${redigererId === p.id ? 'redigeres' : ''}">
+        <div class="bh-entry-left">
+          <span class="bh-entry-dot" style="background:${farveForKategori(kategorier, p.kategori)}"></span>
+          <div class="bh-entry-text">
+            <span class="bh-entry-cat">${escapeHtml(p.kategori)}</span>
+            ${p.beskrivelse ? '<span class="bh-entry-desc">' + escapeHtml(p.beskrivelse) + '</span>' : ''}
+          </div>
+        </div>
+        <div class="bh-entry-right">
+          <span class="bh-entry-amount ${type === 'indkomst' ? 'income' : 'expense'}">${kr(p.beloeb)}</span>
+          <button class="bh-edit-btn" onclick="startRediger('${type}','${p.id}')" aria-label="Rediger" title="Rediger">${iconPencil()}</button>
+          <button class="bh-del-btn" onclick="sletPost('${type}','${p.id}')" aria-label="Slet" title="Slet">${iconTrash()}</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderForm(type) {
+    const kategorier = type === 'indkomst' ? INDKOMST_KATEGORIER : UDGIFT_KATEGORIER;
+    const redigerer = redigererId !== null;
+    return `
+      <div class="bh-form">
+        <select id="form-kategori">
+          ${kategorier.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')}
+        </select>
+        <input type="text" id="form-beskrivelse" placeholder="Beskrivelse (valgfri)">
+        <input type="text" id="form-beloeb" inputmode="decimal" placeholder="Beløb, fx 1250" onkeydown="handleBeloebKeydown(event, '${type}')">
+        <div class="bh-form-actions">
+          <button class="bh-submit-btn" onclick="tilfoejPost('${type}')">${redigerer ? 'Gem ændring' : 'Gem post'}</button>
+          <button class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function beregnAar() {
+    const perMaaned = data.map(beregnMaaned);
+    const indAlt = perMaaned.reduce((s, m) => s + m.ind, 0);
+    const udgAlt = perMaaned.reduce((s, m) => s + m.udg, 0);
+    const alleUdgifter = data.flatMap(m => m.udgifter);
+    return { perMaaned, indAlt, udgAlt, saldoAlt: indAlt - udgAlt, alleUdgifter };
+  }
+
+  function renderBarChart(vaerdier, farveFn) {
+    const maxAbs = Math.max(1, ...vaerdier.map(v => Math.abs(v)));
+    const w = 600, h = 130, gap = 6;
+    const barW = w / 12 - gap;
+    const midY = h / 2 - 6;
+    const scale = (midY - 10) / maxAbs;
+    const bars = vaerdier.map((v, i) => {
+      const x = i * (w / 12) + gap / 2;
+      const barH = Math.max(2, Math.abs(v) * scale);
+      const y = v >= 0 ? midY - barH : midY;
+      const farve = typeof farveFn === 'function' ? farveFn(v) : farveFn;
+      return `
+        <g>
+          <title>${MAANEDER[i]}: ${kr(v)}</title>
+          <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${farve}"></rect>
+          <text x="${x + barW / 2}" y="${h - 2}" text-anchor="middle" font-size="10.5" fill="var(--text-faint)" font-family="Inconsolata, monospace">${MAANEDER_KORT[i]}</text>
+        </g>
+      `;
+    }).join('');
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="130" style="display:block;">
+        <line x1="0" y1="${midY}" x2="${w}" y2="${midY}" stroke="var(--border)" stroke-width="1"></line>
+        ${bars}
+      </svg>
+    `;
+  }
+
+  function renderSammenligningChart(perMaaned) {
+    const maxVal = Math.max(1, ...perMaaned.flatMap(m => [m.ind, m.udg]));
+    const w = 600, h = 150, baseline = h - 18;
+    const slot = w / 12;
+    const barGap = 3;
+    const barW = (slot - barGap * 3) / 2;
+    const scale = (baseline - 10) / maxVal;
+    const bars = perMaaned.map((m, i) => {
+      const slotX = i * slot;
+      const indH = Math.max(1, m.ind * scale);
+      const udgH = Math.max(1, m.udg * scale);
+      const indX = slotX + barGap;
+      const udgX = indX + barW + barGap;
+      return `
+        <g>
+          <title>${MAANEDER[i]}: Indkomst ${kr(m.ind)}, Udgifter ${kr(m.udg)}</title>
+          <rect x="${indX}" y="${baseline - indH}" width="${barW}" height="${indH}" rx="2" fill="var(--green)"></rect>
+          <rect x="${udgX}" y="${baseline - udgH}" width="${barW}" height="${udgH}" rx="2" fill="var(--red)"></rect>
+          <text x="${slotX + slot / 2 - barGap / 2}" y="${h - 2}" text-anchor="middle" font-size="10.5" fill="var(--text-faint)" font-family="Inconsolata, monospace">${MAANEDER_KORT[i]}</text>
+        </g>
+      `;
+    }).join('');
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="150" style="display:block;">
+        <line x1="0" y1="${baseline}" x2="${w}" y2="${baseline}" stroke="var(--border)" stroke-width="1"></line>
+        ${bars}
+      </svg>
+      <div style="display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-muted);">
+        <div style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--green);display:inline-block;"></span>Indkomst</div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--red);display:inline-block;"></span>Udgifter</div>
+      </div>
+    `;
+  }
+
+  function renderYearOverview() {
+    const { perMaaned, indAlt, udgAlt, saldoAlt, alleUdgifter } = beregnAar();
+    return `
+      <div class="bh-summary">
+        <div class="bh-card">
+          <div class="bh-card-label">Indkomst i ${aar}</div>
+          <div class="bh-card-value pos">${kr(indAlt)}</div>
+          <div class="bh-card-sub">Hele året</div>
+        </div>
+        <div class="bh-card">
+          <div class="bh-card-label">Udgifter i ${aar}</div>
+          <div class="bh-card-value neg">${kr(udgAlt)}</div>
+          <div class="bh-card-sub">Hele året</div>
+        </div>
+        <div class="bh-card">
+          <div class="bh-card-label">Saldo i ${aar}</div>
+          <div class="bh-card-value ${saldoAlt >= 0 ? 'pos' : 'neg'}">${kr(saldoAlt)}</div>
+          <div class="bh-card-sub">Indkomst − udgifter</div>
+        </div>
+      </div>
+
+      <div class="bh-panel" style="margin-bottom:12px;">
+        <div class="bh-panel-title">Indkomster kontra udgifter pr. måned</div>
+        ${renderSammenligningChart(perMaaned)}
+      </div>
+
+      <div class="bh-panel">
+        <div class="bh-panel-title">Udgifter efter kategori – hele ${aar}</div>
+        ${renderDonut(alleUdgifter)}
+      </div>
+    `;
+  }
+
+  function renderApp() {
+    const maanedData = data[maanedIndex];
+    const { ind: sumIndkomst, udg: sumUdgifter, saldo } = beregnMaaned(maanedData);
+    const erOversigt = visning === 'oversigt';
+
+    document.getElementById('app').innerHTML = `
+      ${sidsteHandling ? `
+        <button class="bh-undo-btn" onclick="fortryd()">${iconUndo()} ${sidsteHandling.handling === 'rediger' ? 'Fortryd ændring' : 'Fortryd sletning'}</button>
+      ` : ''}
+      <div class="bh-root">
+        <div class="bh-topbar">
+          <div class="bh-title-group">
+            <span class="bh-title">Budget</span>
+            <span class="bh-subtitle">${erOversigt ? 'Årsoversigt' : MAANEDER[maanedIndex]} ${aar}</span>
+          </div>
+          <div class="bh-user-info">
+            ${escapeHtml(currentUser.email || '')}
+            <button class="bh-logout-btn" onclick="logUd()">Log ud</button>
+          </div>
+        </div>
+
+        <div class="bh-controls-row">
+          <div class="bh-month-pills">
+            ${MAANEDER_KORT.map((m, i) => `<button class="bh-pill ${!erOversigt && i === maanedIndex ? 'active' : ''}" onclick="skiftMaaned(${i})">${m}</button>`).join('')}
+            <button class="bh-pill ${erOversigt ? 'active' : ''}" onclick="skiftVisning('oversigt')">Oversigt</button>
+          </div>
+          <div class="bh-year-nav">
+            <button class="bh-year-btn" onclick="skiftAar(-1)" aria-label="Forrige år">${iconChevron('left')}</button>
+            ${aar}
+            <button class="bh-year-btn" onclick="skiftAar(1)" aria-label="Næste år">${iconChevron('right')}</button>
+          </div>
+        </div>
+
+        ${erOversigt ? renderYearOverview() : `
+        <div class="bh-summary">
+          <div class="bh-card">
+            <div class="bh-card-label">Indkomst</div>
+            <div class="bh-card-value pos">${kr(sumIndkomst)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Udgifter</div>
+            <div class="bh-card-value neg">${kr(sumUdgifter)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Saldo</div>
+            <div class="bh-card-value ${saldo >= 0 ? 'pos' : 'neg'}">${kr(saldo)}</div>
+            <div class="bh-card-sub">Indkomst − udgifter</div>
+          </div>
+        </div>
+
+        <div class="bh-main-grid">
+          <div class="bh-panel">
+            <div class="bh-panel-title">Udgifter efter kategori</div>
+            ${renderDonut(maanedData.udgifter)}
+          </div>
+
+          <div class="bh-panel">
+            <div class="bh-list-header">
+              <div class="bh-list-title income">Indtægter</div>
+              <button class="bh-add-btn" onclick="aabnLukForm('indkomst')">${iconPlus()} Tilføj</button>
+            </div>
+            <div class="bh-entry-list">${renderEntryList(maanedData.indkomst, 'indkomst')}</div>
+            ${aktivForm === 'indkomst' ? renderForm('indkomst') : ''}
+            <div class="bh-col-total" style="color:var(--green)"><span>I alt</span><span>${kr(sumIndkomst)}</span></div>
+          </div>
+        </div>
+
+        <div class="bh-panel">
+          <div class="bh-list-header">
+            <div class="bh-list-title expense">Udgifter</div>
+            <button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+          </div>
+          <div class="bh-entry-list">${renderEntryList(maanedData.udgifter, 'udgifter')}</div>
+          ${aktivForm === 'udgifter' ? renderForm('udgifter') : ''}
+          <div class="bh-col-total" style="color:var(--red)"><span>I alt</span><span>${kr(sumUdgifter)}</span></div>
+        </div>
+        `}
+
+      </div>
+    `;
+  }
+
+  /* --- Auth-skærm --- */
+  let loginFejl = '';
+  let loginTilstand = 'login'; // 'login' | 'opret'
+
+  function renderAuthScreen() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root">
+        <div class="bh-auth-wrap">
+          <div class="bh-auth-title">Budget</div>
+          <div class="bh-auth-sub">${loginTilstand === 'login' ? 'Log ind for at se dit budget' : 'Opret en konto for at komme i gang'}</div>
+          <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="auth-password" placeholder="Adgangskode (mindst 6 tegn)" autocomplete="current-password" onkeydown="if(event.key==='Enter'){${loginTilstand === 'login' ? 'forsoegLogin' : 'forsoegOpretKonto'}()}">
+          <div class="bh-auth-actions">
+            ${loginTilstand === 'login'
+              ? '<button class="bh-auth-primary" onclick="forsoegLogin()">Log ind</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'opret\')">Opret konto</button>'
+              : '<button class="bh-auth-primary" onclick="forsoegOpretKonto()">Opret konto</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'login\')">Log ind i stedet</button>'
+            }
+          </div>
+          ${loginFejl ? '<div class="bh-auth-error">' + escapeHtml(loginFejl) + '</div>' : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLoading() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);">
+        Henter dit budget…
+      </div>
+    `;
+  }
+
+  function skiftLoginTilstand(t) {
+    loginTilstand = t;
+    loginFejl = '';
+    renderAuthScreen();
+  }
+
+  function oversaetAuthFejl(kode) {
+    const fejl = {
+      'auth/invalid-email': 'Email-adressen ser ikke rigtig ud.',
+      'auth/user-not-found': 'Der findes ingen konto med den email.',
+      'auth/wrong-password': 'Forkert adgangskode.',
+      'auth/invalid-credential': 'Forkert email eller adgangskode.',
+      'auth/email-already-in-use': 'Der findes allerede en konto med den email.',
+      'auth/weak-password': 'Adgangskoden skal være mindst 6 tegn.',
+      'auth/too-many-requests': 'For mange forsøg. Prøv igen om lidt.'
+    };
+    return fejl[kode] || 'Der skete en fejl. Prøv igen.';
+  }
+
+  window.forsoegLogin = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.forsoegOpretKonto = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.logUd = async function () {
+    aktivForm = null;
+    data = null;
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+      loginFejl = '';
+      loadData();
+    } else {
+      render();
+    }
+  });
+
+  function render() {
+    if (!currentUser) { renderAuthScreen(); return; }
+    if (indlaeserData || !data) { renderLoading(); return; }
+    renderApp();
+  }
+
+  window.skiftAar = skiftAar;
+  window.skiftMaaned = skiftMaaned;
+  window.skiftVisning = skiftVisning;
+  window.aabnLukForm = aabnLukForm;
+  window.fortryd = fortryd;
+  window.startRediger = startRediger;
+  window.lukForm = lukForm;
+  window.tilfoejPost = tilfoejPost;
+  window.sletPost = sletPost;
+  window.handleBeloebKeydown = handleBeloebKeydown;
+  window.skiftLoginTilstand = skiftLoginTilstand;
+</script>
+</body>
+</html>
