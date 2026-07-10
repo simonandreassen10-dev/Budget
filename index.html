@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inconsolata:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #F0F1F3;
+    --card: #FFFFFF;
+    --border: #E5E6EA;
+    --text: #1C1E21;
+    --text-muted: #767A82;
+    --text-faint: #9CA0A8;
+    --green: #2F8F5B;
+    --red: #C0553B;
+    --navy: #33415C;
+    --hover: #F5F5F6;
+    --entry-bg: #F0F1F3;
+    --soft-red: #F3E3DF;
+    --soft-green: #E4F0EA;
+    --soft-navy: #E7E9EE;
+    --shadow: rgba(0,0,0,0.08);
+    --modal-shadow: rgba(0,0,0,0.22);
+    --donut-empty: #EDEDEF;
+    --primary-btn: #33415C;
+    --primary-btn-hover: #263048;
+    --primary-btn-text: #FFFFFF;
+    --tooltip-stroke: #FFFFFF;
+    --focus-ring: rgba(51,65,92,0.18);
+  }
+  body.bh-dark {
+    --bg: #10131A;
+    --card: #171B24;
+    --border: #2A303D;
+    --text: #EEF1F6;
+    --text-muted: #A6ADBA;
+    --text-faint: #7F8796;
+    --green: #54C98B;
+    --red: #F0715D;
+    --navy: #7D91C8;
+    --hover: #202635;
+    --entry-bg: #111722;
+    --soft-red: rgba(240,113,93,0.16);
+    --soft-green: rgba(84,201,139,0.14);
+    --soft-navy: rgba(125,145,200,0.15);
+    --shadow: rgba(0,0,0,0.28);
+    --modal-shadow: rgba(0,0,0,0.52);
+    --donut-empty: #252B38;
+    --primary-btn: #8EA4E6;
+    --primary-btn-hover: #A3B5F0;
+    --primary-btn-text: #10131A;
+    --tooltip-stroke: #10131A;
+    --focus-ring: rgba(142,164,230,0.28);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 14px;
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .bh-root { max-width: 1040px; margin: 0 auto; }
+
+  .bh-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .bh-title-group { display: flex; align-items: baseline; gap: 10px; }
+  .bh-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-subtitle { font-size: 13px; color: var(--text-muted); }
+  .bh-user-info { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--text-muted); }
+  .bh-logout-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; padding: 6px 12px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .bh-logout-btn:hover { background: var(--hover); }
+  .bh-icon-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
+    border-radius: 7px; width: 29px; height: 29px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+  }
+  .bh-icon-btn:hover { background: var(--hover); color: var(--text); }
+
+  .bh-fane-row { display: flex; gap: 6px; }
+  .bh-fane-btn {
+    flex: 1; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; padding: 8px 10px;
+    border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--text-muted); cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  .bh-fane-btn:hover { background: var(--hover); }
+  .bh-fane-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .bh-fane-row-sub { margin-top: -2px; }
+  .bh-modal-indstillinger { max-width: 360px; }
+
+  .bh-tema-valg { display: flex; gap: 10px; }
+  .bh-tema-knap {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--text-muted);
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px 10px;
+    cursor: pointer; transition: all 0.12s ease;
+  }
+  .bh-tema-knap:hover { background: var(--hover); }
+  .bh-tema-knap.active { border-color: var(--navy); color: var(--text); box-shadow: 0 0 0 2px var(--focus-ring); }
+  .bh-tema-knap-ikon { font-size: 22px; }
+
+  .bh-indstillinger-menu { display: flex; flex-direction: column; gap: 8px; }
+  .bh-indstillinger-raekke {
+    display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+    background: var(--entry-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 12px; cursor: pointer; font-family: 'Inter', sans-serif; color: var(--text);
+    transition: background 0.12s ease, transform 0.12s ease;
+  }
+  .bh-indstillinger-raekke:hover { background: var(--hover); transform: translateY(-1px); }
+  .bh-indstillinger-raekke-ikon {
+    width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 16px;
+  }
+  .bh-indstillinger-raekke-tekst { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+  .bh-indstillinger-raekke-titel { font-size: 13.5px; font-weight: 700; }
+  .bh-indstillinger-raekke-sub { font-size: 11.5px; color: var(--text-faint); font-weight: 500; }
+  .bh-indstillinger-raekke svg:last-child { flex-shrink: 0; color: var(--text-faint); }
+
+  .bh-tilbage-link {
+    background: none; border: none; color: var(--text-muted); font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 3px; cursor: pointer;
+    padding: 0; margin-bottom: -6px; width: fit-content;
+  }
+  .bh-tilbage-link:hover { color: var(--navy); }
+
+  .bh-controls-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .bh-month-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .bh-pill {
+    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px; cursor: pointer; white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .bh-pill:hover { background: var(--hover); }
+  .bh-pill.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .bh-year-nav {
+    display: flex; align-items: center; gap: 8px; font-family: 'Inconsolata', monospace;
+    font-size: 14px; font-weight: 600; flex-shrink: 0;
+  }
+  .bh-year-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer;
+  }
+  .bh-year-btn:hover { background: var(--hover); }
+
+  .bh-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 14px; }
+  .bh-summary-oversigt {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px;
+    width: 100%;
+  }
+  .bh-summary-oversigt .bh-card { min-width: 0; }
+  @media (max-width: 900px) {
+    .bh-summary-oversigt { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 460px) {
+    .bh-summary-oversigt { grid-template-columns: 1fr; }
+  }
+  .bh-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 18px var(--shadow); transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease; }
+  .bh-card:hover { transform: translateY(-1px); }
+  .bh-card-label {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 600; margin-bottom: 6px;
+  }
+  .bh-card-value { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+  .bh-card-value.pos { color: var(--green); }
+  .bh-card-value.neg { color: var(--red); }
+  .bh-card-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
+
+  .bh-main-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  @media (max-width: 900px) and (min-width: 781px) {
+    .bh-summary { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 780px) {
+    .bh-main-grid { grid-template-columns: 1fr; }
+    .bh-summary { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 460px) {
+    .bh-summary { grid-template-columns: 1fr; }
+  }
+
+  .bh-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; box-shadow: 0 6px 18px var(--shadow); transition: background 0.18s ease, border-color 0.18s ease; }
+  .bh-panel-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--text-faint); font-weight: 700; margin-bottom: 14px;
+  }
+
+  .bh-donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .bh-donut-svg { flex-shrink: 0; }
+  .bh-legend { display: flex; flex-direction: column; gap: 7px; width: 100%; max-height: 210px; overflow-y: auto; }
+  .bh-legend-row { display: flex; align-items: center; justify-content: space-between; font-size: 14.5px; gap: 8px; }
+  .bh-legend-left { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .bh-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-legend-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-legend-amount { font-family: 'Inconsolata', monospace; font-size: 15px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  .bh-empty-panel { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 20px 0; text-align: center; }
+
+  .bh-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .bh-list-title { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .bh-list-title.income { color: var(--green); }
+  .bh-list-title.expense { color: var(--red); }
+
+  .bh-add-btn {
+    display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 7px; padding: 5px 11px; cursor: pointer; transition: all 0.12s ease;
+  }
+  .bh-add-btn:hover { background: var(--hover); }
+
+  .bh-entry-list { display: flex; flex-direction: column; gap: 6px; min-height: 30px; margin-bottom: 8px; }
+  .bh-entry { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 8px; background: var(--entry-bg); gap: 8px; }
+  .bh-entry-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .bh-entry-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bh-entry-text { display: flex; flex-direction: column; min-width: 0; }
+  .bh-entry-cat { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .bh-entry-desc { font-size: 13px; color: var(--text-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bh-entry-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .bh-entry-amount { font-family: 'Inconsolata', monospace; font-size: 18px; font-weight: 700; }
+  .bh-entry-amount.income { color: var(--green); }
+  .bh-entry-amount.expense { color: var(--red); }
+  .bh-del-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; opacity: 0; transition: opacity 0.12s ease; }
+  .bh-del-btn:hover { color: var(--red); background: var(--soft-red); }
+  .bh-edit-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; opacity: 0; transition: opacity 0.12s ease; }
+  .bh-edit-btn:hover { color: var(--navy); background: var(--soft-navy); }
+  .bh-forward-btn { background: transparent; border: none; color: var(--text-faint); cursor: pointer; padding: 2px; border-radius: 4px; display: flex; opacity: 0; transition: opacity 0.12s ease; }
+  .bh-forward-btn:hover { color: var(--green); background: var(--soft-green); }
+  .bh-entry:hover .bh-edit-btn, .bh-entry:hover .bh-del-btn, .bh-entry:hover .bh-forward-btn,
+  .bh-entry:focus-within .bh-edit-btn, .bh-entry:focus-within .bh-del-btn, .bh-entry:focus-within .bh-forward-btn,
+  .bh-entry.redigeres .bh-edit-btn, .bh-entry.redigeres .bh-del-btn, .bh-entry.redigeres .bh-forward-btn {
+    opacity: 1;
+  }
+  @media (hover: none) {
+    .bh-edit-btn, .bh-del-btn, .bh-forward-btn { opacity: 1; }
+  }
+
+  .bh-tooltip { position: relative; }
+  .bh-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%) translateY(3px);
+    background: var(--text);
+    color: var(--card);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 5px 9px;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px var(--modal-shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.13s ease, transform 0.13s ease;
+    z-index: 30;
+  }
+  .bh-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%) translateY(3px);
+    border: 5px solid transparent;
+    border-top-color: var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.13s ease, transform 0.13s ease;
+    z-index: 30;
+  }
+  .bh-tooltip:hover::after, .bh-tooltip:focus-visible::after,
+  .bh-tooltip:hover::before, .bh-tooltip:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  @media (hover: none) {
+    .bh-tooltip::after, .bh-tooltip::before { display: none; }
+  }
+
+  .bh-toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    z-index: 60;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 8px 24px var(--shadow);
+    animation: bh-toast-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes bh-toast-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .bh-toast.error { background: var(--red); color: #fff; }
+  .bh-toast-icon { flex-shrink: 0; display: flex; }
+
+  .bh-cmp-bar { cursor: pointer; transition: filter 0.12s ease, transform 0.12s ease; transform-box: fill-box; transform-origin: bottom center; }
+  .bh-cmp-group:hover .bh-cmp-bar { stroke: var(--text); stroke-width: 1.5; filter: brightness(1.08) drop-shadow(0 2px 4px rgba(0,0,0,0.18)); transform: scaleY(1.02); }
+  .bh-cmp-tip {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: var(--tooltip-stroke);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+    fill: var(--text);
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45));
+  }
+  .bh-cmp-tip.income { fill: var(--green); }
+  .bh-cmp-tip.expense { fill: var(--red); }
+  .bh-cmp-tip.opsparing { fill: var(--navy); }
+
+  .bh-donut-arc { cursor: pointer; transition: filter 0.12s ease, stroke-width 0.12s ease; }
+  .bh-donut-seg:hover .bh-donut-arc {
+    stroke-width: 26;
+    filter:
+      drop-shadow(1px 0 0 var(--text))
+      drop-shadow(-1px 0 0 var(--text))
+      drop-shadow(0 1px 0 var(--text))
+      drop-shadow(0 -1px 0 var(--text))
+      drop-shadow(0 2px 5px rgba(0,0,0,0.18));
+  }
+  .bh-donut-tip { opacity: 0; transition: opacity 0.12s ease; pointer-events: none; }
+  .bh-donut-seg:hover .bh-donut-tip { opacity: 1; }
+  .bh-entry.redigeres { outline: 2px solid var(--navy); outline-offset: -1px; }
+
+  .bh-empty { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 10px 2px; }
+
+  .bh-col-total {
+    display: flex; justify-content: space-between; padding-top: 10px; margin-top: 4px;
+    border-top: 1px solid var(--border); font-family: 'Inconsolata', monospace; font-size: 17px; font-weight: 700;
+  }
+
+  .bh-opsparing-sektion {
+    margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border);
+  }
+  .bh-opsparing-header {
+    display: flex; align-items: center; gap: 6px; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--navy); font-weight: 700; margin-bottom: 10px;
+  }
+  .bh-opsparing-sektion .bh-entry { background: var(--soft-navy); }
+
+  .bh-panel-delt {
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);
+  }
+  .bh-split-bar-track {
+    display: flex; width: 100%; height: 16px; gap: 2px;
+  }
+  .bh-split-bar-seg { height: 100%; transition: width 0.2s ease; cursor: default; }
+  .bh-split-bar-legend {
+    display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 12px;
+  }
+  .bh-split-bar-item {
+    display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--text); font-weight: 600;
+  }
+  .bh-split-bar-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .bh-split-bar-value { font-family: 'Inconsolata', monospace; font-weight: 700; margin-left: 2px; }
+
+  .bh-modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,21,24,0.38);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: bh-overlay-in 0.16s ease;
+  }
+  @keyframes bh-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .bh-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    width: 100%;
+    max-width: 340px;
+    display: flex; flex-direction: column; gap: 9px;
+    box-shadow: 0 24px 60px var(--modal-shadow);
+    animation: bh-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes bh-modal-in {
+    from { opacity: 0; transform: scale(0.93) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .bh-modal-title {
+    font-size: 15px; font-weight: 700; margin-bottom: 3px;
+  }
+  .bh-modal select, .bh-modal input {
+    font-family: 'Inter', sans-serif; font-size: 13.5px; padding: 9px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; width: 100%;
+  }
+  .bh-modal select:focus, .bh-modal input:focus { border-color: var(--primary-btn); box-shadow: 0 0 0 3px var(--focus-ring); }
+  .bh-form-actions { display: flex; gap: 8px; }
+  .bh-form-actions button {
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; padding: 7px 12px;
+    border-radius: 7px; cursor: pointer; border: none;
+  }
+  .bh-submit-btn {
+    background: var(--primary-btn);
+    color: var(--primary-btn-text);
+    box-shadow: 0 7px 18px rgba(0,0,0,0.18);
+    flex: 1;
+  }
+  .bh-submit-btn:hover { background: var(--primary-btn-hover); transform: translateY(-1px); }
+  .bh-submit-btn:active { transform: translateY(0); }
+  .bh-submit-btn:focus-visible, .bh-cancel-btn:focus-visible, .bh-add-btn:focus-visible, .bh-theme-toggle:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+  .bh-cancel-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border) !important; }
+  .bh-cancel-btn:hover { background: var(--hover); }
+
+  .bh-ny-kategori-wrap { display: flex; gap: 6px; }
+  .bh-ny-kategori-wrap input { flex: 1; min-width: 0; }
+  .bh-mini-btn {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; padding: 8px 11px;
+    border-radius: 7px; cursor: pointer; border: 1px solid var(--border); background: var(--card);
+    color: var(--text); white-space: nowrap; display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s ease;
+  }
+  .bh-mini-btn:hover { background: var(--hover); }
+  .bh-mini-btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+  .bh-mini-btn-danger:hover { filter: brightness(0.92); }
+
+  .bh-manage-link {
+    background: none; border: none; color: var(--text-muted); font-family: 'Inter', sans-serif;
+    font-size: 11.5px; font-weight: 600; text-decoration: underline; cursor: pointer; padding: 0;
+    text-align: left; width: fit-content;
+  }
+  .bh-manage-link:hover { color: var(--navy); }
+
+  .bh-kategori-liste { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+  .bh-kategori-row {
+    display: flex; align-items: center; justify-content: space-between; padding: 9px 10px;
+    border-radius: 8px; background: var(--entry-bg); font-size: 13.5px; font-weight: 600;
+  }
+  .bh-kategori-row-bekraeft { flex-direction: column; align-items: stretch; gap: 9px; background: var(--soft-red); }
+  .bh-kategori-advarsel {
+    font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.45;
+    display: flex; gap: 7px; align-items: flex-start;
+  }
+  .bh-kategori-advarsel svg { flex-shrink: 0; margin-top: 1px; color: var(--red); }
+  .bh-kategori-row-actions { display: flex; gap: 8px; }
+  .bh-kategori-row-actions .bh-mini-btn { flex: 1; }
+
+  .bh-footnote { text-align: center; font-size: 11px; color: var(--text-faint); padding: 10px 0 4px 0; font-family: 'Inconsolata', monospace; }
+
+  .bh-auth-wrap { max-width: 380px; margin: 70px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+  .bh-auth-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .bh-auth-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; }
+  .bh-auth-wrap input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; margin-bottom: 10px;
+  }
+  .bh-auth-wrap input:focus { border-color: var(--navy); }
+  .bh-auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .bh-auth-actions button { flex: 1; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; border: none; }
+  .bh-auth-primary { background: var(--primary-btn); color: var(--primary-btn-text); box-shadow: 0 7px 18px rgba(0,0,0,0.16); }
+  .bh-auth-primary:hover { background: var(--primary-btn-hover); transform: translateY(-1px); }
+  .bh-auth-secondary { background: transparent; color: var(--text); border: 1px solid var(--border) !important; }
+  .bh-auth-secondary:hover { background: var(--hover); }
+  .bh-auth-error { font-size: 12.5px; color: var(--red); margin-top: 10px; }
+
+  .bh-undo-btn {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 9px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px var(--shadow);
+  }
+  .bh-undo-btn:hover { background: #263048; }
+  @media (max-width: 780px) {
+    .bh-undo-btn { top: 10px; right: 10px; padding: 8px 12px; font-size: 12px; }
+  }
+
+  .bh-theme-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 9px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 24px var(--shadow);
+    transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .bh-theme-toggle:hover { transform: translateY(-1px); background: var(--hover); }
+  .bh-theme-toggle-dot {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 14px;
+  }
+  @media (max-width: 780px) {
+    .bh-theme-toggle { right: 12px; bottom: 12px; padding: 8px 11px; }
+    .bh-theme-toggle span:last-child { display: none; }
+  }
+
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBskAOIQBWL66RASn42hkxVOG-weS6J2pM",
+    authDomain: "budget-fdb92.firebaseapp.com",
+    projectId: "budget-fdb92",
+    storageBucket: "budget-fdb92.firebasestorage.app",
+    messagingSenderId: "194173573170",
+    appId: "1:194173573170:web:62f2c00ef9801580db042b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  let darkMode = localStorage.getItem('budget-theme') === 'dark';
+  function anvendTema() {
+    document.body.classList.toggle('bh-dark', darkMode);
+  }
+  function skiftTema() {
+    darkMode = !darkMode;
+    localStorage.setItem('budget-theme', darkMode ? 'dark' : 'light');
+    anvendTema();
+    render();
+  }
+  anvendTema();
+
+  const MAANEDER = ["Januar","Februar","Marts","April","Maj","Juni","Juli","August","September","Oktober","November","December"];
+  const MAANEDER_KORT = ["Jan","Feb","Mar","Apr","Maj","Jun","Jul","Aug","Sep","Okt","Nov","Dec"];
+  const INDKOMST_KATEGORIER = ["Løn","Gave","Investering","Refusion","Udbytte","Fra opsparing","Andet"];
+  const UDGIFT_KATEGORIER = ["Bolig","Transport","Mad & dagligvarer","Forsikring","Abonnementer","Fritid","Tøj","Sundhed","Investering","Opsparing","Andet"];
+  const OPSPARING_KATEGORIER = ["Opsparing","Investering"];
+  const OVERFOERSEL_KATEGORIER = ["Fra opsparing"];
+  const PALET = ["#33415C","#C97A2B","#A13D2E","#2F8F5B","#7C5CB8","#B85C7A","#8A8D93","#C9A227","#4E8FA6","#6B8E4E","#9B5DE5"];
+
+  function erOpsparingsKategori(kategori) {
+    return OPSPARING_KATEGORIER.some(k => k.toLowerCase() === (kategori || '').toLowerCase());
+  }
+  function opsparingLabelTekst(liste) {
+    const harOpsparing = liste.some(p => (p.kategori || '').toLowerCase() === 'opsparing');
+    const harInvestering = liste.some(p => (p.kategori || '').toLowerCase() === 'investering');
+    if (harOpsparing && harInvestering) return 'I alt sparet & investeret';
+    if (harInvestering) return 'I alt investeret';
+    return 'I alt opsparet';
+  }
+  function erOverfoerselsIndkomst(kategori) {
+    return OVERFOERSEL_KATEGORIER.some(k => k.toLowerCase() === (kategori || '').toLowerCase());
+  }
+
+  function farveForKategori(kategorier, kategori) {
+    const idx = kategorier.indexOf(kategori);
+    return PALET[(idx >= 0 ? idx : 0) % PALET.length];
+  }
+  function alleKategorierForType(type) {
+    const basis = type === 'indkomst' ? INDKOMST_KATEGORIER : UDGIFT_KATEGORIER;
+    return [...basis, ...brugerKategorier[type]];
+  }
+
+  let aar = new Date().getFullYear();
+  let maanedIndex = 0; // start altid i Januar
+  let data = null;
+  let aktivForm = null; // 'indkomst' | 'udgifter' | null
+  let saldoModalAaben = false;
+  let redigererId = null; // id of entry currently being edited, or null
+  let visning = 'maaned'; // 'maaned' | 'oversigt'
+  let sidsteHandling = null; // { type, entry, maanedIndex, indexIListe } for fortryd-knappen
+  let brugerKategorier = { indkomst: [], udgifter: [] }; // brugerens egne tilføjede kategorier
+  let indstillingerAaben = false; // om indstillings-popup'en er åben
+  let indstillingerVisning = 'hjem'; // 'hjem' | 'udgifter' | 'indkomst' | 'udseende'
+  let sletKategoriIndeks = null; // index i brugerKategorier[indstillingerVisning] der venter på slette-bekræftelse
+
+  function kr(n) {
+    return new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK', maximumFractionDigits: 0 }).format(n || 0);
+  }
+  function uid() {
+    return Math.random().toString(36).slice(2, 10);
+  }
+  function tomMaaned() { return { indkomst: [], udgifter: [], startsaldo: null }; }
+  function tomtAar() { return Array.from({ length: 12 }, () => tomMaaned()); }
+
+  function yearDocRef(year) {
+    return doc(db, 'budget', currentUser.uid, 'years', String(year));
+  }
+  function kategoriDocRef() {
+    return doc(db, 'budget', currentUser.uid, 'meta', 'kategorier');
+  }
+  async function hentKategorier() {
+    try {
+      const snap = await getDoc(kategoriDocRef());
+      const d = snap.exists() ? snap.data() : {};
+      brugerKategorier = {
+        indkomst: Array.isArray(d.indkomst) ? d.indkomst : [],
+        udgifter: Array.isArray(d.udgifter) ? d.udgifter : []
+      };
+    } catch (e) {
+      console.error('Kunne ikke hente kategorier:', e);
+      brugerKategorier = { indkomst: [], udgifter: [] };
+    }
+    render();
+  }
+  async function gemKategorier() {
+    try {
+      await setDoc(kategoriDocRef(), brugerKategorier);
+    } catch (e) {
+      console.error('Kunne ikke gemme kategorier:', e);
+      visToast('Kunne ikke gemme kategorien — tjek din forbindelse og prøv igen.', 'error');
+    }
+  }
+
+  let indlaeserData = false;
+
+  async function loadData() {
+    indlaeserData = true;
+    render();
+    try {
+      const snap = await getDoc(yearDocRef(aar));
+      data = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
+    } catch (e) {
+      console.error('Kunne ikke hente budgetdata:', e);
+      data = tomtAar();
+    } finally {
+      indlaeserData = false;
+      render();
+    }
+  }
+  async function saveData() {
+    try {
+      await setDoc(yearDocRef(aar), { months: data });
+    } catch (e) {
+      console.error('Kunne ikke gemme budgetdata:', e);
+      visToast('Kunne ikke gemme ændringen — tjek din forbindelse og prøv igen.', 'error');
+    }
+  }
+
+  function skiftAar(delta) {
+    aar += delta;
+    aktivForm = null;
+    saldoModalAaben = false;
+    sidsteHandling = null;
+    loadData();
+  }
+  function skiftMaaned(i) {
+    maanedIndex = i;
+    visning = 'maaned';
+    aktivForm = null;
+    saldoModalAaben = false;
+    sidsteHandling = null;
+    render();
+  }
+  function skiftVisning(v) {
+    visning = v;
+    aktivForm = null;
+    saldoModalAaben = false;
+    redigererId = null;
+    sidsteHandling = null;
+    render();
+  }
+  function aabnLukForm(type) {
+    aktivForm = aktivForm === type && redigererId === null ? null : type;
+    redigererId = null;
+    render();
+    if (aktivForm) {
+      const first = document.querySelector('.bh-modal select');
+      if (first) first.focus();
+    }
+  }
+  function lukForm() {
+    aktivForm = null;
+    saldoModalAaben = false;
+    redigererId = null;
+    render();
+  }
+  function startRediger(type, id) {
+    const entry = data[maanedIndex][type].find(p => p.id === id);
+    if (!entry) return;
+    aktivForm = type;
+    redigererId = id;
+    render();
+    const kategoriEl = document.getElementById('form-kategori');
+    const beskrivelseEl = document.getElementById('form-beskrivelse');
+    const beloebEl = document.getElementById('form-beloeb');
+    if (kategoriEl) kategoriEl.value = entry.kategori;
+    if (beskrivelseEl) beskrivelseEl.value = entry.beskrivelse || '';
+    if (beloebEl) { beloebEl.value = String(entry.beloeb).replace('.', ','); beloebEl.focus(); }
+  }
+  function tilfoejPost(type) {
+    const kategoriEl = document.getElementById('form-kategori');
+    const beskrivelseEl = document.getElementById('form-beskrivelse');
+    const beloebEl = document.getElementById('form-beloeb');
+    if (!kategoriEl || !beloebEl) return;
+    const beloeb = parseFloat(beloebEl.value.replace(',', '.'));
+    if (!beloeb || beloeb <= 0) {
+      beloebEl.focus();
+      return;
+    }
+    if (redigererId) {
+      const entry = data[maanedIndex][type].find(p => p.id === redigererId);
+      if (entry) {
+        sidsteHandling = { handling: 'rediger', type, id: entry.id, forrigeEntry: { ...entry }, maanedIndex };
+        entry.kategori = kategoriEl.value;
+        entry.beskrivelse = (beskrivelseEl.value || '').trim();
+        entry.beloeb = beloeb;
+      }
+    } else {
+      const post = { id: uid(), kategori: kategoriEl.value, beskrivelse: (beskrivelseEl.value || '').trim(), beloeb: beloeb };
+      data[maanedIndex][type].push(post);
+    }
+    aktivForm = null;
+    redigererId = null;
+    saveData();
+    render();
+  }
+  function sletPost(type, id) {
+    const liste = data[maanedIndex][type];
+    const entryIndex = liste.findIndex(p => p.id === id);
+    if (entryIndex === -1) return;
+    const entry = liste[entryIndex];
+    sidsteHandling = { handling: 'slet', type, entry: { ...entry }, entryIndex, maanedIndex };
+    data[maanedIndex][type] = liste.filter(p => p.id !== id);
+    saveData();
+    render();
+  }
+  function fortryd() {
+    if (!sidsteHandling) return;
+    if (sidsteHandling.handling === 'slet_kategori') {
+      const { type, kategori, index } = sidsteHandling;
+      const liste = brugerKategorier[type];
+      const indsaetIndex = Math.min(index, liste.length);
+      liste.splice(indsaetIndex, 0, kategori);
+      sidsteHandling = null;
+      gemKategorier();
+      render();
+      return;
+    }
+    const { handling, type, maanedIndex: m } = sidsteHandling;
+    if (handling === 'slet') {
+      const liste = data[m][type];
+      const indsaetIndex = Math.min(sidsteHandling.entryIndex, liste.length);
+      liste.splice(indsaetIndex, 0, sidsteHandling.entry);
+    } else if (handling === 'rediger') {
+      const entry = data[m][type].find(p => p.id === sidsteHandling.id);
+      if (entry) {
+        entry.kategori = sidsteHandling.forrigeEntry.kategori;
+        entry.beskrivelse = sidsteHandling.forrigeEntry.beskrivelse;
+        entry.beloeb = sidsteHandling.forrigeEntry.beloeb;
+      }
+    }
+    sidsteHandling = null;
+    saveData();
+    render();
+  }
+  function handleBeloebKeydown(e, type) {
+    if (e.key === 'Enter') tilfoejPost(type);
+  }
+
+  function aabnIndstillinger() {
+    indstillingerAaben = true;
+    indstillingerVisning = 'hjem';
+    sletKategoriIndeks = null;
+    render();
+  }
+  function lukIndstillinger() {
+    indstillingerAaben = false;
+    sletKategoriIndeks = null;
+    render();
+  }
+  function aabnIndstillingerSektion(sektion) {
+    indstillingerVisning = sektion;
+    sletKategoriIndeks = null;
+    render();
+    if (sektion === 'udgifter' || sektion === 'indkomst') {
+      const input = document.getElementById('ny-kategori-navn');
+      if (input) input.focus();
+    }
+  }
+  function tilbageTilIndstillingerHjem() {
+    indstillingerVisning = 'hjem';
+    sletKategoriIndeks = null;
+    render();
+  }
+  function vaelgTema(erMoerk) {
+    darkMode = erMoerk;
+    localStorage.setItem('budget-theme', darkMode ? 'dark' : 'light');
+    anvendTema();
+    render();
+  }
+  function tilfoejKategoriFraIndstillinger() {
+    const type = indstillingerVisning;
+    if (type !== 'indkomst' && type !== 'udgifter') return;
+    const input = document.getElementById('ny-kategori-navn');
+    if (!input) return;
+    const navn = input.value.trim();
+    if (!navn) { input.focus(); return; }
+    const findesAllerede = alleKategorierForType(type).some(k => k.toLowerCase() === navn.toLowerCase());
+    if (findesAllerede) {
+      visToast('Den kategori findes allerede.', 'error');
+      input.focus();
+      input.select();
+      return;
+    }
+    brugerKategorier[type].push(navn);
+    gemKategorier();
+    render();
+    const nytInput = document.getElementById('ny-kategori-navn');
+    if (nytInput) nytInput.focus();
+  }
+  function spoergSletKategori(idx) {
+    sletKategoriIndeks = idx;
+    render();
+  }
+  function annullerSletKategori() {
+    sletKategoriIndeks = null;
+    render();
+  }
+  function bekraeftSletKategori(idx) {
+    const type = indstillingerVisning;
+    if (type !== 'indkomst' && type !== 'udgifter') return;
+    const liste = brugerKategorier[type];
+    const kategori = liste[idx];
+    if (kategori === undefined) return;
+    liste.splice(idx, 1);
+    sidsteHandling = { handling: 'slet_kategori', type, kategori, index: idx };
+    sletKategoriIndeks = null;
+    gemKategorier();
+    render();
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && indstillingerAaben) { lukIndstillinger(); return; }
+    if (e.key === 'Escape' && (aktivForm || saldoModalAaben)) { lukForm(); return; }
+
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      if (aktivForm || saldoModalAaben || indstillingerAaben || visning !== 'maaned') return;
+      const aktivtElement = document.activeElement;
+      const tag = aktivtElement ? aktivtElement.tagName : '';
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft' && maanedIndex > 0) { e.preventDefault(); skiftMaaned(maanedIndex - 1); }
+      if (e.key === 'ArrowRight' && maanedIndex < 11) { e.preventDefault(); skiftMaaned(maanedIndex + 1); }
+    }
+  });
+
+  let toastBesked = null;
+  let toastType = 'info';
+  let toastTimeoutId = null;
+  function visToast(tekst, type = 'info') {
+    toastBesked = tekst;
+    toastType = type;
+    render();
+    if (toastTimeoutId) clearTimeout(toastTimeoutId);
+    toastTimeoutId = setTimeout(() => { toastBesked = null; render(); }, type === 'error' ? 4200 : 2500);
+  }
+
+  async function kopierTilNaesteMaaned(id) {
+    const entry = data[maanedIndex].udgifter.find(p => p.id === id);
+    if (!entry) return;
+    const nyPost = { id: uid(), kategori: entry.kategori, beskrivelse: entry.beskrivelse, beloeb: entry.beloeb };
+    if (maanedIndex === 11) {
+      const naesteAar = aar + 1;
+      try {
+        const ref = doc(db, 'budget', currentUser.uid, 'years', String(naesteAar));
+        const snap = await getDoc(ref);
+        const remoteData = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
+        remoteData[0].udgifter.push(nyPost);
+        await setDoc(ref, { months: remoteData });
+        visToast('Kopieret til Januar ' + naesteAar);
+      } catch (e) {
+        console.error('Kunne ikke kopiere til næste år:', e);
+        visToast('Kunne ikke kopiere udgiften — tjek din forbindelse og prøv igen.', 'error');
+      }
+    } else {
+      data[maanedIndex + 1].udgifter.push(nyPost);
+      saveData();
+      visToast('Kopieret til ' + MAANEDER[maanedIndex + 1]);
+    }
+  }
+
+  function visCmpTip(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = '1';
+  }
+  function skjulCmpTip(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = '0';
+  }
+
+  function beregnMaaned(m) {
+    const indAlt = m.indkomst.reduce((s, p) => s + p.beloeb, 0);
+    const overfoersel = m.indkomst.filter(p => erOverfoerselsIndkomst(p.kategori)).reduce((s, p) => s + p.beloeb, 0);
+    const ind = indAlt - overfoersel;
+    const udgAlt = m.udgifter.reduce((s, p) => s + p.beloeb, 0);
+    const opsparing = m.udgifter.filter(p => erOpsparingsKategori(p.kategori)).reduce((s, p) => s + p.beloeb, 0);
+    const udg = udgAlt - opsparing;
+    return { ind, indAlt, overfoersel, udg, udgAlt, opsparing, saldo: ind - udg };
+  }
+
+  function effektivStartsaldo(index) {
+    const m = data[index];
+    if (m.startsaldo !== null && m.startsaldo !== undefined) return m.startsaldo;
+    if (index === 0) return null;
+    const forrige = effektivStartsaldo(index - 1);
+    if (forrige === null) return null;
+    // Bruger de FULDE beløb (indAlt/udgAlt) her, ikke de "rigtige" ind/udg —
+    // for hvad der rent faktisk går ind og ud af kontoen, tæller overførsler til/fra opsparing også med.
+    const { indAlt, udgAlt } = beregnMaaned(data[index - 1]);
+    return forrige + indAlt - udgAlt;
+  }
+
+  function angivStartsaldo() {
+    aktivForm = null;
+    redigererId = null;
+    saldoModalAaben = true;
+    render();
+    const input = document.getElementById('form-startsaldo');
+    if (input) {
+      const nuvaerende = data[maanedIndex].startsaldo;
+      input.value = nuvaerende !== null && nuvaerende !== undefined ? String(nuvaerende).replace('.', ',') : '';
+      input.focus();
+      input.select();
+    }
+  }
+  function gemStartsaldo() {
+    const input = document.getElementById('form-startsaldo');
+    if (!input) return;
+    const tal = parseFloat(input.value.trim().replace(',', '.'));
+    if (isNaN(tal)) { input.focus(); return; }
+    data[maanedIndex].startsaldo = tal;
+    saldoModalAaben = false;
+    saveData();
+    render();
+  }
+  function handleStartsaldoKeydown(e) {
+    if (e.key === 'Enter') gemStartsaldo();
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function iconPlus() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  }
+  function iconTrash() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  }
+  function iconPencil() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>';
+  }
+  function iconForward() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+  }
+  function iconChevron(dir) {
+    const points = dir === 'left' ? '15 18 9 12 15 6' : '9 18 15 12 9 6';
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="' + points + '"></polyline></svg>';
+  }
+  function iconWarning() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+  }
+  function iconPiggyBank() {
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8.7-3.6 1.8-.4-.1-.9-.1-1.4-.1H10c-3.3 0-6 2.7-6 6v.5C3.4 13.6 3 14.5 3 15.5S3.4 17.4 4 17.8V19a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1h6v1a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2.3c.6-.5 1-1.3 1-2.2V9c1.1 0 2-.9 2-2 0-1.1-1.3-2-3-2Z"></path><path d="M15 11h.01"></path><path d="M2 10.5 4 12"></path></svg>';
+  }
+  function iconTrendUp() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>';
+  }
+  function iconTrendDown() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>';
+  }
+  function iconUndo() {
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 7"></path></svg>';
+  }
+  function iconClose() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  }
+  function iconSettings() {
+    return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
+  }
+  function renderThemeToggle() {
+    return `<button class="bh-theme-toggle bh-tooltip" onclick="skiftTema()" data-tooltip="Skift tema" aria-label="Skift mellem lyst og mørkt tema"><span class="bh-theme-toggle-dot">${darkMode ? '☀️' : '🌙'}</span><span>${darkMode ? 'Lyst tema' : 'Dark mode'}</span></button>`;
+  }
+
+  function pasFontTilBredde(tekst, maxBredde, minStr, maxStr) {
+    const gnsnitTegnBredde = 0.56;
+    const beregnet = maxBredde / (tekst.length * gnsnitTegnBredde);
+    return Math.max(minStr, Math.min(maxStr, beregnet));
+  }
+
+  function renderDonut(udgifter) {
+    const perKategori = {};
+    udgifter.forEach(p => { perKategori[p.kategori] = (perKategori[p.kategori] || 0) + p.beloeb; });
+    const rows = Object.entries(perKategori).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, r) => s + r[1], 0);
+
+    if (rows.length === 0) {
+      return `
+        <div class="bh-donut-wrap">
+          <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="58" fill="none" stroke="var(--donut-empty)" stroke-width="22"></circle>
+          </svg>
+          <div class="bh-empty-panel" style="flex:1;">Ingen udgifter registreret denne måned endnu.</div>
+        </div>
+      `;
+    }
+
+    const cx = 75, cy = 75, r = 58, strokeW = 22;
+    const circumference = 2 * Math.PI * r;
+    const maxTekstBredde = 84; // holdet i midten af donuten
+    let offset = 0;
+    const segments = rows.map(([kategori, beloeb]) => {
+      const fraction = beloeb / total;
+      const dash = fraction * circumference;
+      const procent = Math.round(fraction * 100);
+      const kategoriTekst = escapeHtml(kategori);
+      const beloebTekst = `${kr(beloeb)} (${procent}%)`;
+      const kategoriFont = pasFontTilBredde(kategori, maxTekstBredde, 8, 13);
+      const beloebFont = pasFontTilBredde(beloebTekst, maxTekstBredde, 8, 12.5);
+      const seg = `
+        <g class="bh-donut-seg">
+          <circle class="bh-donut-arc" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${farveForKategori(alleKategorierForType('udgifter'), kategori)}" stroke-width="${strokeW}"
+            stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"></circle>
+          <g class="bh-donut-tip">
+            <text x="${cx}" y="${cy - 6}" text-anchor="middle" font-family="Inter, sans-serif" font-size="${kategoriFont}" font-weight="700" fill="var(--text)">${kategoriTekst}</text>
+            <text x="${cx}" y="${cy + 11}" text-anchor="middle" font-family="Inconsolata, monospace" font-size="${beloebFont}" font-weight="700" fill="var(--text)">${beloebTekst}</text>
+          </g>
+        </g>
+      `;
+      offset += dash;
+      return seg;
+    }).join('');
+
+    const legend = rows.map(([kategori, beloeb]) => `
+      <div class="bh-legend-row">
+        <div class="bh-legend-left">
+          <span class="bh-legend-dot" style="background:${farveForKategori(alleKategorierForType('udgifter'), kategori)}"></span>
+          <span class="bh-legend-name">${escapeHtml(kategori)}</span>
+        </div>
+        <span class="bh-legend-amount">${kr(beloeb)} <span style="color:var(--text-faint);font-weight:500;">(${Math.round((beloeb / total) * 100)}%)</span></span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="bh-donut-wrap">
+        <svg class="bh-donut-svg" width="150" height="150" viewBox="0 0 150 150">
+          ${segments}
+        </svg>
+        <div class="bh-legend">${legend}</div>
+      </div>
+    `;
+  }
+
+  function grupperEfterKategori(liste) {
+    const raekkefoelge = [];
+    const grupper = {};
+    liste.forEach(p => {
+      if (!grupper[p.kategori]) { grupper[p.kategori] = []; raekkefoelge.push(p.kategori); }
+      grupper[p.kategori].push(p);
+    });
+    return raekkefoelge.flatMap(k => grupper[k]);
+  }
+
+  function renderEntryList(list, type) {
+    if (list.length === 0) {
+      return '<div class="bh-empty">Ingen ' + (type === 'indkomst' ? 'indtægter' : 'udgifter') + ' registreret endnu.</div>';
+    }
+    const kategorier = alleKategorierForType(type);
+    const grupperet = grupperEfterKategori(list);
+    return grupperet.map(p => `
+      <div class="bh-entry ${redigererId === p.id ? 'redigeres' : ''}">
+        <div class="bh-entry-left">
+          <span class="bh-entry-dot" style="background:${farveForKategori(kategorier, p.kategori)}"></span>
+          <div class="bh-entry-text">
+            <span class="bh-entry-cat">${escapeHtml(p.kategori)}</span>
+            ${p.beskrivelse ? '<span class="bh-entry-desc">' + escapeHtml(p.beskrivelse) + '</span>' : ''}
+          </div>
+        </div>
+        <div class="bh-entry-right">
+          <span class="bh-entry-amount ${type === 'indkomst' ? 'income' : 'expense'}">${kr(p.beloeb)}</span>
+          ${type === 'udgifter' ? `<button class="bh-forward-btn bh-tooltip" onclick="kopierTilNaesteMaaned('${p.id}')" aria-label="Kopiér til næste måned" data-tooltip="Kopiér til næste måned">${iconForward()}</button>` : ''}
+          <button class="bh-edit-btn bh-tooltip" onclick="startRediger('${type}','${p.id}')" aria-label="Rediger" data-tooltip="Rediger">${iconPencil()}</button>
+          <button class="bh-del-btn bh-tooltip" onclick="sletPost('${type}','${p.id}')" aria-label="Slet" data-tooltip="Slet">${iconTrash()}</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderModal(type) {
+    const kategorier = alleKategorierForType(type);
+    const redigerer = redigererId !== null;
+    const titel = redigerer
+      ? (type === 'indkomst' ? 'Rediger indtægt' : 'Rediger udgift')
+      : (type === 'indkomst' ? 'Ny indtægt' : 'Ny udgift');
+    return `
+      <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukForm()">
+        <div class="bh-modal">
+          <div class="bh-modal-title">${titel}</div>
+          <select id="form-kategori" autocomplete="off">
+            ${kategorier.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')}
+          </select>
+          <input type="text" id="form-beskrivelse" placeholder="Beskrivelse (valgfri)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-beskrivelse-${uid()}">
+          <input type="text" id="form-beloeb" inputmode="decimal" placeholder="Beløb, fx 1250" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-beloeb-${uid()}" onkeydown="handleBeloebKeydown(event, '${type}')">
+          <div class="bh-form-actions">
+            <button class="bh-submit-btn" onclick="tilfoejPost('${type}')">${redigerer ? 'Gem ændring' : 'Gem post'}</button>
+            <button class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderKategoriSektion(type) {
+    const liste = brugerKategorier[type];
+    const raekker = liste.map((kategori, idx) => {
+      if (sletKategoriIndeks === idx) {
+        return `
+          <div class="bh-kategori-row bh-kategori-row-bekraeft">
+            <div class="bh-kategori-advarsel">${iconWarning()} Slet <strong>${escapeHtml(kategori)}</strong>? Eksisterende posteringer beholder navnet, men den kan ikke vælges fremover.</div>
+            <div class="bh-kategori-row-actions">
+              <button type="button" class="bh-mini-btn bh-mini-btn-danger" onclick="bekraeftSletKategori(${idx})">Ja, slet kategorien</button>
+              <button type="button" class="bh-mini-btn" onclick="annullerSletKategori()">Fortryd</button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="bh-kategori-row">
+          <span>${escapeHtml(kategori)}</span>
+          <button type="button" class="bh-del-btn bh-tooltip" style="opacity:1;" onclick="spoergSletKategori(${idx})" data-tooltip="Slet kategori" aria-label="Slet kategori">${iconTrash()}</button>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="bh-ny-kategori-wrap">
+        <input type="text" id="ny-kategori-navn" placeholder="Navn på ny kategori" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();tilfoejKategoriFraIndstillinger();}">
+        <button type="button" class="bh-mini-btn" onclick="tilfoejKategoriFraIndstillinger()">Tilføj</button>
+      </div>
+      ${liste.length === 0
+        ? '<div class="bh-empty" style="padding:2px 0 6px;">Du har ikke tilføjet nogen selv endnu — standardkategorierne bruges stadig, du kan bare ikke slette dem.</div>'
+        : `<div class="bh-kategori-liste">${raekker}</div>`
+      }
+    `;
+  }
+
+  function renderUdseendeSektion() {
+    return `
+      <div class="bh-tema-valg">
+        <button type="button" class="bh-tema-knap ${!darkMode ? 'active' : ''}" onclick="vaelgTema(false)">
+          <span class="bh-tema-knap-ikon">☀️</span>
+          <span>Lyst tema</span>
+        </button>
+        <button type="button" class="bh-tema-knap ${darkMode ? 'active' : ''}" onclick="vaelgTema(true)">
+          <span class="bh-tema-knap-ikon">🌙</span>
+          <span>Mørkt tema</span>
+        </button>
+      </div>
+    `;
+  }
+
+  function renderIndstillingerHjem() {
+    return `
+      <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukIndstillinger()">
+        <div class="bh-modal bh-modal-indstillinger">
+          <div class="bh-modal-title">Indstillinger</div>
+          <div class="bh-indstillinger-menu">
+            <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('udgifter')">
+              <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-red);color:var(--red);">${iconTrendDown()}</span>
+              <span class="bh-indstillinger-raekke-tekst">
+                <span class="bh-indstillinger-raekke-titel">Udgiftskategorier</span>
+                <span class="bh-indstillinger-raekke-sub">${brugerKategorier.udgifter.length} tilføjet af dig</span>
+              </span>
+              ${iconChevron('right')}
+            </button>
+            <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('indkomst')">
+              <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-green);color:var(--green);">${iconTrendUp()}</span>
+              <span class="bh-indstillinger-raekke-tekst">
+                <span class="bh-indstillinger-raekke-titel">Indtægtskategorier</span>
+                <span class="bh-indstillinger-raekke-sub">${brugerKategorier.indkomst.length} tilføjet af dig</span>
+              </span>
+              ${iconChevron('right')}
+            </button>
+            <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('udseende')">
+              <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-navy);color:var(--navy);">🎨</span>
+              <span class="bh-indstillinger-raekke-tekst">
+                <span class="bh-indstillinger-raekke-titel">Udseende</span>
+                <span class="bh-indstillinger-raekke-sub">${darkMode ? 'Mørkt tema' : 'Lyst tema'}</span>
+              </span>
+              ${iconChevron('right')}
+            </button>
+          </div>
+          <div class="bh-form-actions">
+            <button type="button" class="bh-cancel-btn" style="flex:1;" onclick="lukIndstillinger()">Luk</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderIndstillingerDetalje() {
+    const titler = { udgifter: 'Udgiftskategorier', indkomst: 'Indtægtskategorier', udseende: 'Udseende' };
+    const indhold = indstillingerVisning === 'udseende'
+      ? renderUdseendeSektion()
+      : renderKategoriSektion(indstillingerVisning);
+    return `
+      <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukIndstillinger()">
+        <div class="bh-modal bh-modal-indstillinger">
+          <button type="button" class="bh-tilbage-link" onclick="tilbageTilIndstillingerHjem()">${iconChevron('left')} Indstillinger</button>
+          <div class="bh-modal-title">${titler[indstillingerVisning]}</div>
+          ${indhold}
+          <div class="bh-form-actions">
+            <button type="button" class="bh-cancel-btn" style="flex:1;" onclick="lukIndstillinger()">Luk</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderIndstillingerModal() {
+    return indstillingerVisning === 'hjem' ? renderIndstillingerHjem() : renderIndstillingerDetalje();
+  }
+
+
+  function renderSaldoModal() {
+    return `
+      <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukForm()">
+        <div class="bh-modal">
+          <div class="bh-modal-title">Angiv saldo på konto</div>
+          <input type="text" id="form-startsaldo" inputmode="decimal" placeholder="Saldo, fx 12500" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-startsaldo-${uid()}" onkeydown="handleStartsaldoKeydown(event)">
+          <div class="bh-form-actions">
+            <button class="bh-submit-btn" onclick="gemStartsaldo()">Gem saldo</button>
+            <button class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function beregnAar() {
+    const perMaaned = data.map(beregnMaaned);
+    const indAlt = perMaaned.reduce((s, m) => s + m.ind, 0);
+    const udgAlt = perMaaned.reduce((s, m) => s + m.udg, 0);
+    const opsparingAlt = perMaaned.reduce((s, m) => s + m.opsparing, 0);
+    const alleUdgifter = data.flatMap(m => m.udgifter.filter(p => !erOpsparingsKategori(p.kategori)));
+    const alleOpsparingsPoster = data.flatMap(m => m.udgifter.filter(p => erOpsparingsKategori(p.kategori)));
+    const opsparingKunAlt = alleOpsparingsPoster.filter(p => (p.kategori || '').toLowerCase() === 'opsparing').reduce((s, p) => s + p.beloeb, 0);
+    const investeretKunAlt = alleOpsparingsPoster.filter(p => (p.kategori || '').toLowerCase() === 'investering').reduce((s, p) => s + p.beloeb, 0);
+    return { perMaaned, indAlt, udgAlt, opsparingAlt, opsparingKunAlt, investeretKunAlt, saldoAlt: indAlt - udgAlt, alleUdgifter, alleOpsparingsPoster };
+  }
+
+  function renderBarChart(vaerdier, farveFn) {
+    const maxAbs = Math.max(1, ...vaerdier.map(v => Math.abs(v)));
+    const w = 600, h = 130, gap = 6;
+    const barW = w / 12 - gap;
+    const midY = h / 2 - 6;
+    const scale = (midY - 10) / maxAbs;
+    const bars = vaerdier.map((v, i) => {
+      const x = i * (w / 12) + gap / 2;
+      const barH = Math.max(2, Math.abs(v) * scale);
+      const y = v >= 0 ? midY - barH : midY;
+      const farve = typeof farveFn === 'function' ? farveFn(v) : farveFn;
+      return `
+        <g>
+          <title>${MAANEDER[i]}: ${kr(v)}</title>
+          <rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="3" fill="${farve}"></rect>
+          <text x="${x + barW / 2}" y="${h - 2}" text-anchor="middle" font-size="10.5" fill="var(--text-faint)" font-family="Inconsolata, monospace">${MAANEDER_KORT[i]}</text>
+        </g>
+      `;
+    }).join('');
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="130" style="display:block;">
+        <line x1="0" y1="${midY}" x2="${w}" y2="${midY}" stroke="var(--border)" stroke-width="1"></line>
+        ${bars}
+      </svg>
+    `;
+  }
+
+  function renderSammenligningChart(perMaaned) {
+    const visOpsparing = perMaaned.some(m => m.opsparing > 0);
+    const antalBarer = visOpsparing ? 3 : 2;
+    const maxVal = Math.max(1, ...perMaaned.flatMap(m => visOpsparing ? [m.ind, m.udg, m.opsparing] : [m.ind, m.udg]));
+    const w = 600, h = 195, baseline = h - 20;
+    const slot = w / 12;
+    const groupPad = 3; // luft mellem hver måneds-gruppe
+    const barGap = 3; // luft mellem søjlerne inden i en måned
+    const barW = (slot - groupPad * 2 - barGap * (antalBarer - 1)) / antalBarer;
+    const scale = (baseline - 14) / maxVal;
+    const tipY = (topY) => Math.min(topY + 15, baseline - 6);
+    const tipFontSize = visOpsparing ? 12.5 : 14;
+
+    let stolper = '';
+    let tooltips = '';
+    let maanedNavne = '';
+
+    perMaaned.forEach((m, i) => {
+      const slotX = i * slot;
+      const indX = slotX + groupPad;
+      const udgX = indX + barW + barGap;
+
+      const indH = Math.max(1, m.ind * scale);
+      const udgH = Math.max(1, m.udg * scale);
+      const indY = baseline - indH;
+      const udgY = baseline - udgH;
+
+      const indTipId = `cmp-tip-${i}-ind`;
+      const udgTipId = `cmp-tip-${i}-udg`;
+
+      stolper += `
+        <g class="bh-cmp-group" onclick="skiftMaaned(${i})" onmouseenter="visCmpTip('${indTipId}')" onmouseleave="skjulCmpTip('${indTipId}')">
+          <rect class="bh-cmp-bar" x="${indX}" y="${indY}" width="${barW}" height="${indH}" rx="3" fill="var(--green)"></rect>
+        </g>
+        <g class="bh-cmp-group" onclick="skiftMaaned(${i})" onmouseenter="visCmpTip('${udgTipId}')" onmouseleave="skjulCmpTip('${udgTipId}')">
+          <rect class="bh-cmp-bar" x="${udgX}" y="${udgY}" width="${barW}" height="${udgH}" rx="3" fill="var(--red)"></rect>
+        </g>
+      `;
+      tooltips += `
+        <text id="${indTipId}" class="bh-cmp-tip income" x="${indX + barW / 2}" y="${tipY(indY)}" text-anchor="middle" font-family="Inconsolata, monospace" font-size="${tipFontSize}" font-weight="800">${kr(m.ind)}</text>
+        <text id="${udgTipId}" class="bh-cmp-tip expense" x="${udgX + barW / 2}" y="${tipY(udgY)}" text-anchor="middle" font-family="Inconsolata, monospace" font-size="${tipFontSize}" font-weight="800">${kr(m.udg)}</text>
+      `;
+
+      if (visOpsparing) {
+        const opsX = udgX + barW + barGap;
+        const opsH = Math.max(1, m.opsparing * scale);
+        const opsY = baseline - opsH;
+        const opsTipId = `cmp-tip-${i}-ops`;
+        stolper += `
+          <g class="bh-cmp-group" onclick="skiftMaaned(${i})" onmouseenter="visCmpTip('${opsTipId}')" onmouseleave="skjulCmpTip('${opsTipId}')">
+            <rect class="bh-cmp-bar" x="${opsX}" y="${opsY}" width="${barW}" height="${opsH}" rx="3" fill="var(--navy)"></rect>
+          </g>
+        `;
+        tooltips += `<text id="${opsTipId}" class="bh-cmp-tip opsparing" x="${opsX + barW / 2}" y="${tipY(opsY)}" text-anchor="middle" font-family="Inconsolata, monospace" font-size="${tipFontSize}" font-weight="800">${kr(m.opsparing)}</text>`;
+      }
+
+      maanedNavne += `<text x="${slotX + slot / 2}" y="${h - 4}" text-anchor="middle" font-size="12.5" fill="var(--text-faint)" font-family="Inconsolata, monospace">${MAANEDER_KORT[i]}</text>`;
+    });
+
+    return `
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" style="display:block;overflow:visible;">
+        <line x1="0" y1="${baseline}" x2="${w}" y2="${baseline}" stroke="var(--border)" stroke-width="1"></line>
+        ${stolper}
+        ${maanedNavne}
+        ${tooltips}
+      </svg>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:10px;font-size:12px;color:var(--text-muted);">
+        <div style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--green);display:inline-block;"></span>Indkomst</div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--red);display:inline-block;"></span>Forbrug</div>
+        ${visOpsparing ? `<div style="display:flex;align-items:center;gap:6px;"><span style="width:9px;height:9px;border-radius:2px;background:var(--navy);display:inline-block;"></span>Opsparing &amp; investering</div>` : ''}
+      </div>
+    `;
+  }
+
+  function renderForbrugVsOpsparingBar(forbrug, opsparing, investering) {
+    const total = forbrug + opsparing + investering;
+    if (total <= 0) return '';
+    const dele = [
+      { navn: 'Forbrug', beloeb: forbrug, farve: 'var(--red)' },
+      { navn: 'Opsparing', beloeb: opsparing, farve: 'var(--navy)' },
+      { navn: 'Investering', beloeb: investering, farve: '#7C5CB8' }
+    ].filter(d => d.beloeb > 0);
+
+    const track = dele.map((d, idx) => {
+      const pct = Math.round((d.beloeb / total) * 100);
+      const isFirst = idx === 0;
+      const isLast = idx === dele.length - 1;
+      const radius = isFirst && isLast ? '999px' : isFirst ? '999px 0 0 999px' : isLast ? '0 999px 999px 0' : '0';
+      const tooltipTekst = escapeHtml(`${d.navn}: ${kr(d.beloeb)} (${pct}%)`);
+      return `<div class="bh-split-bar-seg bh-tooltip" style="width:${(d.beloeb / total) * 100}%; background:${d.farve}; border-radius:${radius};" data-tooltip="${tooltipTekst}"></div>`;
+    }).join('');
+
+    const legend = dele.map(d => {
+      const pct = Math.round((d.beloeb / total) * 100);
+      return `
+        <div class="bh-split-bar-item">
+          <span class="bh-split-bar-dot" style="background:${d.farve};"></span>
+          <span>${d.navn}</span>
+          <span class="bh-split-bar-value">${kr(d.beloeb)} <span style="color:var(--text-faint);font-weight:500;">(${pct}%)</span></span>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="bh-split-bar">
+        <div class="bh-split-bar-track">
+          ${track}
+        </div>
+        <div class="bh-split-bar-legend">
+          ${legend}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderYearOverview() {
+    const { perMaaned, indAlt, udgAlt, opsparingAlt, opsparingKunAlt, investeretKunAlt, saldoAlt, alleUdgifter, alleOpsparingsPoster } = beregnAar();
+    return `
+      <div class="bh-summary-oversigt">
+        <div class="bh-card">
+          <div class="bh-card-label">Indkomst i ${aar}</div>
+          <div class="bh-card-value pos">${kr(indAlt)}</div>
+          <div class="bh-card-sub">Hele året</div>
+        </div>
+        <div class="bh-card">
+          <div class="bh-card-label">Udgifter i ${aar}</div>
+          <div class="bh-card-value neg">${kr(udgAlt)}</div>
+          <div class="bh-card-sub">Hele året</div>
+        </div>
+        <div class="bh-card">
+          <div class="bh-card-label">Saldo i ${aar}</div>
+          <div class="bh-card-value ${saldoAlt >= 0 ? 'pos' : 'neg'}">${kr(saldoAlt)}</div>
+          <div class="bh-card-sub">Indkomst − udgifter</div>
+        </div>
+        <div class="bh-card">
+          <div class="bh-card-label">Opsparing &amp; investering</div>
+          <div class="bh-card-value" style="color:var(--navy);">${kr(opsparingAlt)}</div>
+          <div class="bh-card-sub">Tæller ikke som forbrug</div>
+        </div>
+      </div>
+
+      <div class="bh-panel" style="margin-bottom:12px;">
+        <div class="bh-panel-title">${alleOpsparingsPoster.length > 0 ? 'Indkomst, forbrug &amp; opsparing pr. måned' : 'Indkomster kontra udgifter pr. måned'}</div>
+        ${renderSammenligningChart(perMaaned)}
+      </div>
+
+      <div class="bh-panel" style="margin-bottom:12px;">
+        <div class="bh-panel-title">Udgifter efter kategori – hele ${aar}</div>
+        ${renderDonut(alleUdgifter)}
+      </div>
+
+      ${alleOpsparingsPoster.length > 0 ? `
+        <div class="bh-panel">
+          <div class="bh-panel-title">Opsparing &amp; investering – hele ${aar}</div>
+          ${renderDonut(alleOpsparingsPoster)}
+          <div class="bh-panel-delt">
+            ${renderForbrugVsOpsparingBar(udgAlt, opsparingKunAlt, investeretKunAlt)}
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  function renderApp() {
+    const maanedData = data[maanedIndex];
+    const { ind: sumIndkomst, indAlt: sumIndkomstAlt, overfoersel: sumOverfoersel, udg: sumUdgifter, udgAlt: sumUdgifterAlt, opsparing: sumOpsparing, saldo } = beregnMaaned(maanedData);
+    const erOversigt = visning === 'oversigt';
+    const startEffektiv = erOversigt ? null : effektivStartsaldo(maanedIndex);
+    const kontosaldoVaerdi = startEffektiv !== null ? startEffektiv + sumIndkomstAlt - sumUdgifterAlt : null;
+
+    document.getElementById('app').innerHTML = `
+      ${sidsteHandling ? `
+        <button class="bh-undo-btn" onclick="fortryd()">${iconUndo()} ${sidsteHandling.handling === 'rediger' ? 'Fortryd ændring' : sidsteHandling.handling === 'slet_kategori' ? 'Fortryd sletning af kategori' : 'Fortryd sletning'}</button>
+      ` : ''}
+      ${toastBesked ? `<div class="bh-toast ${toastType === 'error' ? 'error' : ''}">${toastType === 'error' ? `<span class="bh-toast-icon">${iconWarning()}</span>` : ''}${escapeHtml(toastBesked)}</div>` : ''}
+      <div class="bh-root">
+        <div class="bh-topbar">
+          <div class="bh-title-group">
+            <span class="bh-title">Budget</span>
+            <span class="bh-subtitle">${erOversigt ? 'Årsoversigt' : MAANEDER[maanedIndex]} ${aar}</span>
+          </div>
+          <div class="bh-user-info">
+            ${escapeHtml(currentUser.email || '')}
+            <button class="bh-icon-btn bh-tooltip" onclick="aabnIndstillinger()" data-tooltip="Indstillinger" aria-label="Åbn indstillinger">${iconSettings()}</button>
+            <button class="bh-logout-btn" onclick="logUd()">Log ud</button>
+          </div>
+        </div>
+
+        <div class="bh-controls-row">
+          <div class="bh-month-pills">
+            ${MAANEDER_KORT.map((m, i) => `<button class="bh-pill ${!erOversigt && i === maanedIndex ? 'active' : ''}" onclick="skiftMaaned(${i})">${m}</button>`).join('')}
+            <button class="bh-pill ${erOversigt ? 'active' : ''}" onclick="skiftVisning('oversigt')">Oversigt</button>
+          </div>
+          <div class="bh-year-nav">
+            <button class="bh-year-btn" onclick="skiftAar(-1)" aria-label="Forrige år">${iconChevron('left')}</button>
+            ${aar}
+            <button class="bh-year-btn" onclick="skiftAar(1)" aria-label="Næste år">${iconChevron('right')}</button>
+          </div>
+        </div>
+
+        ${erOversigt ? renderYearOverview() : `
+        <div class="bh-summary">
+          <div class="bh-card">
+            <div class="bh-card-label">Indkomst</div>
+            <div class="bh-card-value pos">${kr(sumIndkomst)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Udgifter</div>
+            <div class="bh-card-value neg">${kr(sumUdgifter)}</div>
+            <div class="bh-card-sub">${MAANEDER[maanedIndex]}</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Saldo</div>
+            <div class="bh-card-value ${saldo >= 0 ? 'pos' : 'neg'}">${kr(saldo)}</div>
+            <div class="bh-card-sub">Indkomst − udgifter</div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Saldo på konto</div>
+            <div class="bh-card-value">${kontosaldoVaerdi !== null ? kr(kontosaldoVaerdi) : '–'}</div>
+            <div class="bh-card-sub">
+              ${kontosaldoVaerdi !== null ? 'Forventet, ud fra din start-saldo' : 'Indtast din start-saldo'}
+              <button onclick="angivStartsaldo()" style="margin-left:6px;background:none;border:none;color:var(--navy);cursor:pointer;font-weight:700;text-decoration:underline;font-size:11.5px;padding:0;">${kontosaldoVaerdi !== null ? 'Ret' : 'Angiv'}</button>
+            </div>
+          </div>
+          <div class="bh-card">
+            <div class="bh-card-label">Opsparing & investering</div>
+            <div class="bh-card-value" style="color:var(--navy);">${kr(sumOpsparing)}</div>
+            <div class="bh-card-sub">Tæller ikke som forbrug</div>
+          </div>
+        </div>
+
+        <div class="bh-main-grid">
+          <div class="bh-panel">
+            <div class="bh-panel-title">Udgifter efter kategori</div>
+            ${renderDonut(maanedData.udgifter.filter(p => !erOpsparingsKategori(p.kategori)))}
+          </div>
+
+          <div class="bh-panel">
+            <div class="bh-list-header">
+              <div class="bh-list-title income">Indtægter</div>
+              <button class="bh-add-btn" onclick="aabnLukForm('indkomst')">${iconPlus()} Tilføj</button>
+            </div>
+            <div class="bh-entry-list">${renderEntryList(maanedData.indkomst.filter(p => !erOverfoerselsIndkomst(p.kategori)), 'indkomst')}</div>
+            <div class="bh-col-total" style="color:var(--green)"><span>I alt</span><span>${kr(sumIndkomst)}</span></div>
+            ${maanedData.indkomst.some(p => erOverfoerselsIndkomst(p.kategori)) ? `
+              <div class="bh-opsparing-sektion">
+                <div class="bh-opsparing-header">${iconPiggyBank()} Overført fra opsparing</div>
+                <div class="bh-entry-list">${renderEntryList(maanedData.indkomst.filter(p => erOverfoerselsIndkomst(p.kategori)), 'indkomst')}</div>
+                <div class="bh-col-total" style="color:var(--navy)"><span>I alt overført</span><span>${kr(sumOverfoersel)}</span></div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="bh-panel">
+          <div class="bh-list-header">
+            <div class="bh-list-title expense">Udgifter</div>
+            <button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+          </div>
+          <div class="bh-entry-list">${renderEntryList(maanedData.udgifter.filter(p => !erOpsparingsKategori(p.kategori)), 'udgifter')}</div>
+          <div class="bh-col-total" style="color:var(--red)"><span>I alt</span><span>${kr(sumUdgifter)}</span></div>
+          ${maanedData.udgifter.some(p => erOpsparingsKategori(p.kategori)) ? `
+            <div class="bh-opsparing-sektion">
+              <div class="bh-opsparing-header">${iconPiggyBank()} Opsparing &amp; investering</div>
+              <div class="bh-entry-list">${renderEntryList(maanedData.udgifter.filter(p => erOpsparingsKategori(p.kategori)), 'udgifter')}</div>
+              <div class="bh-col-total" style="color:var(--navy)"><span>${opsparingLabelTekst(maanedData.udgifter)}</span><span>${kr(sumOpsparing)}</span></div>
+            </div>
+          ` : ''}
+        </div>
+        `}
+
+      </div>
+      ${aktivForm ? renderModal(aktivForm) : ''}
+      ${saldoModalAaben ? renderSaldoModal() : ''}
+      ${indstillingerAaben ? renderIndstillingerModal() : ''}
+      ${renderThemeToggle()}
+    `;
+  }
+
+  /* --- Auth-skærm --- */
+  let loginFejl = '';
+  let loginTilstand = 'login'; // 'login' | 'opret'
+
+  function renderAuthScreen() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root">
+        <div class="bh-auth-wrap">
+          <div class="bh-auth-title">Budget</div>
+          <div class="bh-auth-sub">${loginTilstand === 'login' ? 'Log ind for at se dit budget' : 'Opret en konto for at komme i gang'}</div>
+          <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="auth-password" placeholder="Adgangskode (mindst 6 tegn)" autocomplete="current-password" onkeydown="if(event.key==='Enter'){${loginTilstand === 'login' ? 'forsoegLogin' : 'forsoegOpretKonto'}()}">
+          <div class="bh-auth-actions">
+            ${loginTilstand === 'login'
+              ? '<button class="bh-auth-primary" onclick="forsoegLogin()">Log ind</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'opret\')">Opret konto</button>'
+              : '<button class="bh-auth-primary" onclick="forsoegOpretKonto()">Opret konto</button><button class="bh-auth-secondary" onclick="skiftLoginTilstand(\'login\')">Log ind i stedet</button>'
+            }
+          </div>
+          ${loginFejl ? '<div class="bh-auth-error">' + escapeHtml(loginFejl) + '</div>' : ''}
+        </div>
+      </div>
+      ${renderThemeToggle()}
+    `;
+  }
+
+  function renderLoading() {
+    document.getElementById('app').innerHTML = `
+      <div class="bh-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);">
+        Henter dit budget…
+      </div>
+      ${renderThemeToggle()}
+    `;
+  }
+
+  function skiftLoginTilstand(t) {
+    loginTilstand = t;
+    loginFejl = '';
+    renderAuthScreen();
+  }
+
+  function oversaetAuthFejl(kode) {
+    const fejl = {
+      'auth/invalid-email': 'Email-adressen ser ikke rigtig ud.',
+      'auth/user-not-found': 'Der findes ingen konto med den email.',
+      'auth/wrong-password': 'Forkert adgangskode.',
+      'auth/invalid-credential': 'Forkert email eller adgangskode.',
+      'auth/email-already-in-use': 'Der findes allerede en konto med den email.',
+      'auth/weak-password': 'Adgangskoden skal være mindst 6 tegn.',
+      'auth/too-many-requests': 'For mange forsøg. Prøv igen om lidt.'
+    };
+    return fejl[kode] || 'Der skete en fejl. Prøv igen.';
+  }
+
+  window.forsoegLogin = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.forsoegOpretKonto = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      loginFejl = oversaetAuthFejl(e.code);
+      renderAuthScreen();
+    }
+  };
+
+  window.logUd = async function () {
+    aktivForm = null;
+    data = null;
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+      loginFejl = '';
+      hentKategorier();
+      loadData();
+    } else {
+      render();
+    }
+  });
+
+  function render() {
+    if (!currentUser) { renderAuthScreen(); return; }
+    if (indlaeserData || !data) { renderLoading(); return; }
+    renderApp();
+  }
+
+  window.skiftAar = skiftAar;
+  window.skiftMaaned = skiftMaaned;
+  window.visCmpTip = visCmpTip;
+  window.skjulCmpTip = skjulCmpTip;
+  window.skiftVisning = skiftVisning;
+  window.aabnLukForm = aabnLukForm;
+  window.kopierTilNaesteMaaned = kopierTilNaesteMaaned;
+  window.angivStartsaldo = angivStartsaldo;
+  window.gemStartsaldo = gemStartsaldo;
+  window.handleStartsaldoKeydown = handleStartsaldoKeydown;
+  window.fortryd = fortryd;
+  window.startRediger = startRediger;
+  window.lukForm = lukForm;
+  window.tilfoejPost = tilfoejPost;
+  window.sletPost = sletPost;
+  window.handleBeloebKeydown = handleBeloebKeydown;
+  window.aabnIndstillinger = aabnIndstillinger;
+  window.lukIndstillinger = lukIndstillinger;
+  window.aabnIndstillingerSektion = aabnIndstillingerSektion;
+  window.tilbageTilIndstillingerHjem = tilbageTilIndstillingerHjem;
+  window.vaelgTema = vaelgTema;
+  window.tilfoejKategoriFraIndstillinger = tilfoejKategoriFraIndstillinger;
+  window.spoergSletKategori = spoergSletKategori;
+  window.annullerSletKategori = annullerSletKategori;
+  window.bekraeftSletKategori = bekraeftSletKategori;
+  window.skiftLoginTilstand = skiftLoginTilstand;
+  window.skiftTema = skiftTema;
+</script>
+</body>
+</html>
