@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aktier</title>
+<meta name="theme-color" content="#33415C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aktier">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inconsolata:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #F0F1F3;
+    --card: #FFFFFF;
+    --border: #E5E6EA;
+    --text: #1C1E21;
+    --text-muted: #767A82;
+    --text-faint: #9CA0A8;
+    --green: #2F8F5B;
+    --red: #C0553B;
+    --navy: #33415C;
+    --hover: #F5F5F6;
+    --entry-bg: #F0F1F3;
+    --soft-red: #F3E3DF;
+    --soft-green: #E4F0EA;
+    --soft-navy: #E7E9EE;
+    --shadow: rgba(0,0,0,0.08);
+    --modal-shadow: rgba(0,0,0,0.22);
+    --primary-btn: #33415C;
+    --primary-btn-hover: #263048;
+    --primary-btn-text: #FFFFFF;
+    --focus-ring: rgba(51,65,92,0.18);
+  }
+  body.ak-dark {
+    --bg: #10131A;
+    --card: #171B24;
+    --border: #2A303D;
+    --text: #EEF1F6;
+    --text-muted: #A6ADBA;
+    --text-faint: #7F8796;
+    --green: #54C98B;
+    --red: #F0715D;
+    --navy: #7D91C8;
+    --hover: #202635;
+    --entry-bg: #111722;
+    --soft-red: rgba(240,113,93,0.16);
+    --soft-green: rgba(84,201,139,0.14);
+    --soft-navy: rgba(125,145,200,0.15);
+    --shadow: rgba(0,0,0,0.28);
+    --modal-shadow: rgba(0,0,0,0.52);
+    --primary-btn: #8EA4E6;
+    --primary-btn-hover: #A3B5F0;
+    --primary-btn-text: #10131A;
+    --focus-ring: rgba(142,164,230,0.28);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 14px;
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.18s ease, color 0.18s ease;
+  }
+  .ak-root { max-width: 780px; margin: 0 auto; }
+
+  .ak-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 10px; }
+  .ak-title-group { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .ak-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .ak-subtitle { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ak-topbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .ak-icon-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
+    border-radius: 7px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.12s ease, color 0.12s ease, transform 0.12s ease;
+  }
+  .ak-icon-btn:hover { background: var(--hover); color: var(--text); }
+  .ak-icon-btn.spinning svg { animation: ak-spin 0.9s linear infinite; }
+  @keyframes ak-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .ak-logout-btn {
+    background: var(--card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 7px; padding: 6px 12px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .ak-logout-btn:hover { background: var(--hover); }
+
+  .ak-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 620px) { .ak-summary { grid-template-columns: 1fr; } }
+  .ak-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; box-shadow: 0 6px 18px var(--shadow); transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease; }
+  .ak-card:hover { transform: translateY(-1px); }
+  .ak-card-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); font-weight: 600; margin-bottom: 6px; }
+  .ak-card-value { font-family: 'Inter', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .ak-card-value.pos { color: var(--green); }
+  .ak-card-value.neg { color: var(--red); }
+  .ak-card-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 3px; }
+
+  .ak-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; box-shadow: 0 6px 18px var(--shadow); }
+  .ak-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+  .ak-list-title { font-size: 14.5px; font-weight: 700; }
+  .ak-add-btn {
+    display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif;
+    font-size: 12.5px; font-weight: 600; border: 1px solid var(--border); background: var(--bg);
+    color: var(--text); border-radius: 7px; padding: 6px 12px; cursor: pointer; transition: all 0.12s ease;
+    flex-shrink: 0;
+  }
+  .ak-add-btn:hover { background: var(--hover); }
+
+  .ak-holding-list { display: flex; flex-direction: column; gap: 6px; }
+  .ak-holding-row {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: var(--entry-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 12px; cursor: pointer; font-family: 'Inter', sans-serif; color: var(--text);
+    transition: background 0.12s ease, transform 0.12s ease;
+  }
+  .ak-holding-row:hover { background: var(--hover); transform: translateY(-1px); }
+  .ak-holding-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .ak-holding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .ak-holding-navn { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ak-holding-sub { font-size: 11px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ak-holding-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+  .ak-holding-vaerdi { font-family: 'Inconsolata', monospace; font-weight: 700; font-size: 14px; }
+  .ak-holding-afkast { font-family: 'Inconsolata', monospace; font-weight: 600; font-size: 11.5px; }
+  .ak-holding-afkast.pos { color: var(--green); }
+  .ak-holding-afkast.neg { color: var(--red); }
+  .ak-holding-afkast.neutral { color: var(--text-faint); }
+
+  .ak-empty-panel { font-size: 12.5px; color: var(--text-faint); font-style: italic; padding: 20px 0; text-align: center; }
+  .ak-footnote { text-align: center; font-size: 11px; color: var(--text-faint); padding: 14px 0 4px 0; line-height: 1.6; }
+
+  .ak-modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(20,21,24,0.38);
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    animation: ak-overlay-in 0.16s ease;
+  }
+  @keyframes ak-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+  .ak-modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    width: 100%; max-width: 360px; max-height: 88vh; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 24px 60px var(--modal-shadow);
+    animation: ak-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes ak-modal-in { from { opacity: 0; transform: scale(0.93) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .ak-modal-title { font-size: 15px; font-weight: 700; }
+  .ak-field-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); margin-bottom: -3px; }
+  .ak-modal input {
+    font-family: 'Inter', sans-serif; font-size: 13.5px; padding: 9px 10px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; width: 100%;
+  }
+  .ak-modal input:focus { border-color: var(--primary-btn); box-shadow: 0 0 0 3px var(--focus-ring); }
+  .ak-field-hint { font-size: 11px; color: var(--text-faint); margin-top: -4px; }
+  .ak-field-error { font-size: 11.5px; color: var(--red); }
+  .ak-form-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .ak-form-actions button { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; padding: 8px 12px; border-radius: 7px; cursor: pointer; border: none; }
+  .ak-submit-btn { background: var(--primary-btn); color: var(--primary-btn-text); box-shadow: 0 7px 18px rgba(0,0,0,0.18); flex: 1; }
+  .ak-submit-btn:hover { background: var(--primary-btn-hover); transform: translateY(-1px); }
+  .ak-cancel-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border) !important; }
+  .ak-cancel-btn:hover { background: var(--hover); }
+  .ak-delete-btn { background: var(--soft-red); color: var(--red); }
+  .ak-delete-btn:hover { filter: brightness(0.95); }
+
+  .ak-auth-wrap { max-width: 380px; margin: 70px auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+  .ak-auth-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .ak-auth-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; }
+  .ak-auth-wrap input {
+    width: 100%; font-family: 'Inter', sans-serif; font-size: 14px; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; margin-bottom: 10px;
+  }
+  .ak-auth-wrap input:focus { border-color: var(--navy); }
+  .ak-auth-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .ak-auth-actions button { flex: 1; font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700; padding: 10px; border-radius: 8px; cursor: pointer; border: none; }
+  .ak-auth-primary { background: var(--primary-btn); color: var(--primary-btn-text); box-shadow: 0 7px 18px rgba(0,0,0,0.16); }
+  .ak-auth-primary:hover { background: var(--primary-btn-hover); transform: translateY(-1px); }
+  .ak-auth-secondary { background: transparent; color: var(--text); border: 1px solid var(--border) !important; }
+  .ak-auth-secondary:hover { background: var(--hover); }
+  .ak-auth-error { font-size: 12.5px; color: var(--red); margin-top: 10px; }
+
+  .ak-toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 9px; background: var(--text); color: var(--bg);
+    padding: 10px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 600; z-index: 60;
+    max-width: calc(100vw - 40px); box-shadow: 0 8px 24px var(--shadow);
+    animation: ak-toast-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes ak-toast-in { from { opacity: 0; transform: translateX(-50%) translateY(6px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  .ak-toast.error { background: var(--red); color: #fff; }
+
+  .ak-theme-toggle {
+    position: fixed; right: 18px; bottom: 18px; z-index: 55;
+    display: flex; align-items: center; gap: 8px; background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 999px; padding: 9px 13px;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 8px 24px var(--shadow); transition: transform 0.12s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .ak-theme-toggle:hover { transform: translateY(-1px); background: var(--hover); }
+  .ak-theme-toggle-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--bg); border: 1px solid var(--border); font-size: 14px; }
+  @media (max-width: 780px) {
+    .ak-theme-toggle { right: 12px; bottom: 12px; padding: 8px 11px; }
+    .ak-theme-toggle span:last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc
+  } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+  // Samme Firebase-projekt som budget-appen, så login deles automatisk (samme origin).
+  const firebaseConfig = {
+    apiKey: "AIzaSyBskAOIQBWL66RASn42hkxVOG-weS6J2pM",
+    authDomain: "budget-fdb92.firebaseapp.com",
+    projectId: "budget-fdb92",
+    storageBucket: "budget-fdb92.firebasestorage.app",
+    messagingSenderId: "194173573170",
+    appId: "1:194173573170:web:62f2c00ef9801580db042b"
+  };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  // Delt theme-nøgle med budget-appen, så valg af lys/mørk følger med mellem apps.
+  let darkMode = localStorage.getItem('budget-theme') === 'dark';
+  function anvendTema() { document.body.classList.toggle('ak-dark', darkMode); }
+  function skiftTema() {
+    darkMode = !darkMode;
+    localStorage.setItem('budget-theme', darkMode ? 'dark' : 'light');
+    anvendTema();
+    render();
+  }
+  anvendTema();
+
+  let indlaeserData = false;
+  let data = null; // { holdings: [{id, ticker, navn, antal, gak}] }
+  let kursData = {}; // holdingId -> { price, currency, changePct } | null (fejl)
+  let fxCache = {}; // valutakode -> kurs til DKK
+  let opdaterer = false;
+  let sidsteOpdatering = null;
+
+  let formTilstand = null; // null | 'tilfoej' | { rediger: holdingId }
+  let formFejl = '';
+  let formGemmer = false;
+
+  let toastState = null; // { tekst, type }
+  let toastTimer = null;
+  function visToast(tekst, type) {
+    toastState = { tekst, type: type || 'ok' };
+    render();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastState = null; render(); }, 3200);
+  }
+
+  function kr(n) {
+    let vaerdi = Math.round(n || 0);
+    if (vaerdi === 0) vaerdi = 0;
+    return new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK', maximumFractionDigits: 0 }).format(vaerdi);
+  }
+  function pct(n) {
+    if (n == null || !isFinite(n)) return '–';
+    const fortegn = n > 0 ? '+' : '';
+    return fortegn + n.toFixed(1).replace('.', ',') + '%';
+  }
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  /* ---------- Firestore ---------- */
+  function porteforljeDocRef() {
+    return doc(db, 'aktier', currentUser.uid, 'data', 'portefolje');
+  }
+  async function loadData() {
+    indlaeserData = true; render();
+    try {
+      const snap = await getDoc(porteforljeDocRef());
+      data = snap.exists() ? snap.data() : { holdings: [] };
+      if (!Array.isArray(data.holdings)) data.holdings = [];
+    } catch (e) {
+      data = { holdings: [] };
+      visToast('Kunne ikke hente din portefølje.', 'error');
+    }
+    indlaeserData = false;
+    render();
+    opdaterKurser();
+  }
+  async function gemData() {
+    try {
+      await setDoc(porteforljeDocRef(), data);
+    } catch (e) {
+      visToast('Kunne ikke gemme ændringen.', 'error');
+    }
+  }
+
+  /* ---------- Live kurser (Yahoo Finance, uofficiel, via CORS-proxy) ---------- */
+  function proxyUrl(target, forsoegNr) {
+    if (forsoegNr === 0) return 'https://corsproxy.io/?url=' + encodeURIComponent(target);
+    return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(target);
+  }
+  async function yahooFetch(symbol) {
+    const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    for (let i = 0; i < 2; i++) {
+      try {
+        const res = await fetch(proxyUrl(target, i));
+        if (!res.ok) continue;
+        const json = await res.json();
+        const result = json && json.chart && json.chart.result && json.chart.result[0];
+        const meta = result && result.meta;
+        if (!meta || typeof meta.regularMarketPrice !== 'number') continue;
+        const forrige = meta.previousClose ?? meta.chartPreviousClose ?? null;
+        const changePct = forrige ? ((meta.regularMarketPrice - forrige) / forrige) * 100 : null;
+        return {
+          price: meta.regularMarketPrice,
+          currency: meta.currency || 'DKK',
+          changePct
+        };
+      } catch (e) { /* prøv næste proxy */ }
+    }
+    return null;
+  }
+  async function hentFxTilDKK(valuta) {
+    if (valuta === 'DKK') return 1;
+    if (fxCache[valuta] !== undefined) return fxCache[valuta];
+    const q = await yahooFetch(valuta + 'DKK=X');
+    fxCache[valuta] = q ? q.price : null;
+    return fxCache[valuta];
+  }
+  async function opdaterKurser() {
+    if (!data || !data.holdings.length) return;
+    opdaterer = true; render();
+    const valutaer = new Set();
+    await Promise.all(data.holdings.map(async (h) => {
+      const q = await yahooFetch(h.ticker);
+      kursData[h.id] = q;
+      if (q) valutaer.add(q.currency);
+    }));
+    await Promise.all([...valutaer].map(v => hentFxTilDKK(v)));
+    sidsteOpdatering = new Date();
+    opdaterer = false;
+    render();
+  }
+
+  function beregnHolding(h) {
+    const q = kursData[h.id];
+    if (q === undefined) return { status: 'henter' };
+    if (q === null) return { status: 'fejl' };
+    const fx = q.currency === 'DKK' ? 1 : fxCache[q.currency];
+    if (fx == null) return { status: 'fejl' };
+    const kursDkk = q.price * fx;
+    const gakDkk = h.gak * fx;
+    const vaerdi = kursDkk * h.antal;
+    const kostpris = gakDkk * h.antal;
+    const afkastKr = vaerdi - kostpris;
+    const afkastPct = kostpris !== 0 ? (afkastKr / kostpris) * 100 : 0;
+    return { status: 'ok', kurs: q.price, valuta: q.currency, vaerdi, kostpris, afkastKr, afkastPct, changePct: q.changePct };
+  }
+
+  /* ---------- Formular: tilføj/rediger ---------- */
+  window.aabnTilfoejForm = function () {
+    formTilstand = 'tilfoej';
+    formFejl = '';
+    render();
+  };
+  window.aabnRedigerForm = function (id) {
+    formTilstand = { rediger: id };
+    formFejl = '';
+    render();
+  };
+  window.lukForm = function () {
+    formTilstand = null;
+    formFejl = '';
+    render();
+  };
+  window.gemHolding = async function () {
+    const tickerEl = document.getElementById('ak-input-ticker');
+    const antalEl = document.getElementById('ak-input-antal');
+    const gakEl = document.getElementById('ak-input-gak');
+    const ticker = tickerEl.value.trim().toUpperCase();
+    const antal = parseFloat(antalEl.value.trim().replace(',', '.'));
+    const gak = parseFloat(gakEl.value.trim().replace(',', '.'));
+
+    if (!ticker) { formFejl = 'Angiv en ticker.'; render(); return; }
+    if (!antal || antal <= 0) { formFejl = 'Angiv et gyldigt antal.'; render(); return; }
+    if (!gak || gak <= 0) { formFejl = 'Angiv en gyldig GAK (købskurs pr. aktie).'; render(); return; }
+
+    formGemmer = true; formFejl = ''; render();
+
+    const redigerId = (typeof formTilstand === 'object' && formTilstand.rediger) ? formTilstand.rediger : null;
+    const id = redigerId || uid();
+
+    const q = await yahooFetch(ticker);
+    if (!q) {
+      formGemmer = false;
+      formFejl = `Kunne ikke finde kurs for "${ticker}". Tjek stavning/ticker (fx AAPL eller NOVO-B.CO for Nasdaq Copenhagen).`;
+      render();
+      return;
+    }
+    kursData[id] = q;
+    if (q.currency !== 'DKK') await hentFxTilDKK(q.currency);
+
+    const post = { id, ticker, antal, gak };
+    if (redigerId) {
+      const idx = data.holdings.findIndex(h => h.id === redigerId);
+      if (idx > -1) data.holdings[idx] = post;
+    } else {
+      data.holdings.push(post);
+    }
+    await gemData();
+    formGemmer = false;
+    formTilstand = null;
+    render();
+    visToast(redigerId ? 'Investering opdateret.' : 'Investering tilføjet.');
+  };
+  window.sletHolding = async function (id) {
+    data.holdings = data.holdings.filter(h => h.id !== id);
+    delete kursData[id];
+    formTilstand = null;
+    await gemData();
+    render();
+    visToast('Investering slettet.');
+  };
+
+  window.opdaterKurserManuelt = function () { opdaterKurser(); };
+
+  /* ---------- Ikoner ---------- */
+  function iconPlus() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+  }
+  function iconTrash() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  }
+  function iconRepeat(size) {
+    const s = size || 14;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
+  }
+  function iconWarning() {
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+  }
+  function iconClose() {
+    return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  }
+
+  function renderThemeToggle() {
+    return `<button class="ak-theme-toggle" onclick="skiftTema()" aria-label="Skift mellem lyst og mørkt tema"><span class="ak-theme-toggle-dot">${darkMode ? '☀️' : '🌙'}</span><span>${darkMode ? 'Lyst tema' : 'Dark mode'}</span></button>`;
+  }
+  function renderToast() {
+    if (!toastState) return '';
+    return `<div class="ak-toast ${toastState.type === 'error' ? 'error' : ''}">${escapeHtml(toastState.tekst)}</div>`;
+  }
+
+  /* ---------- Render: oversigt ---------- */
+  function renderApp() {
+    const beregninger = data.holdings.map(h => ({ h, b: beregnHolding(h) }));
+    const gyldige = beregninger.filter(x => x.b.status === 'ok');
+    const samletVaerdi = gyldige.reduce((s, x) => s + x.b.vaerdi, 0);
+    const samletKostpris = gyldige.reduce((s, x) => s + x.b.kostpris, 0);
+    const samletAfkast = samletVaerdi - samletKostpris;
+    const samletAfkastPct = samletKostpris !== 0 ? (samletAfkast / samletKostpris) * 100 : 0;
+    const antalFejl = beregninger.filter(x => x.b.status === 'fejl').length;
+
+    document.getElementById('app').innerHTML = `
+      <div class="ak-root">
+        <div class="ak-topbar">
+          <div class="ak-title-group">
+            <div class="ak-title">Aktier</div>
+            <div class="ak-subtitle">${currentUser.email}</div>
+          </div>
+          <div class="ak-topbar-actions">
+            <button class="ak-icon-btn ${opdaterer ? 'spinning' : ''}" onclick="opdaterKurserManuelt()" title="Opdater kurser">${iconRepeat(15)}</button>
+            <button class="ak-logout-btn" onclick="logUd()">Log ud</button>
+          </div>
+        </div>
+
+        <div class="ak-summary">
+          <div class="ak-card">
+            <div class="ak-card-label">Samlet værdi</div>
+            <div class="ak-card-value">${kr(samletVaerdi)}</div>
+            <div class="ak-card-sub">${gyldige.length} af ${data.holdings.length} aktier opdateret</div>
+          </div>
+          <div class="ak-card">
+            <div class="ak-card-label">Afkast</div>
+            <div class="ak-card-value ${samletAfkast >= 0 ? 'pos' : 'neg'}">${kr(samletAfkast)}</div>
+            <div class="ak-card-sub">${pct(samletAfkastPct)}</div>
+          </div>
+          <div class="ak-card">
+            <div class="ak-card-label">Investeret</div>
+            <div class="ak-card-value">${kr(samletKostpris)}</div>
+            <div class="ak-card-sub">Samlet kostpris</div>
+          </div>
+        </div>
+
+        <div class="ak-panel">
+          <div class="ak-list-header">
+            <div class="ak-list-title">Beholdninger</div>
+            <button class="ak-add-btn" onclick="aabnTilfoejForm()">${iconPlus()} Tilføj investering</button>
+          </div>
+          ${data.holdings.length === 0
+            ? `<div class="ak-empty-panel">Ingen investeringer endnu — tilføj din første aktie.</div>`
+            : `<div class="ak-holding-list">${beregninger.map(({ h, b }) => renderHoldingRow(h, b)).join('')}</div>`
+          }
+        </div>
+
+        <div class="ak-footnote">
+          ${antalFejl > 0 ? `⚠ Kunne ikke hente kurs for ${antalFejl} aktie(r) — prøv opdater igen.<br>` : ''}
+          Kurser fra Yahoo Finance (uofficiel kilde, kan afvige fra realtid).
+          ${sidsteOpdatering ? `Sidst opdateret kl. ${sidsteOpdatering.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}.` : ''}
+        </div>
+      </div>
+      ${formTilstand ? renderForm() : ''}
+      ${renderToast()}
+      ${renderThemeToggle()}
+    `;
+  }
+
+  function renderHoldingRow(h, b) {
+    let vaerdiTekst = '…';
+    let afkastTekst = 'Henter kurs…';
+    let afkastKlasse = 'neutral';
+    let dotFarve = 'var(--text-faint)';
+    if (b.status === 'ok') {
+      vaerdiTekst = kr(b.vaerdi);
+      afkastTekst = `${kr(b.afkastKr)} · ${pct(b.afkastPct)}`;
+      afkastKlasse = b.afkastKr >= 0 ? 'pos' : 'neg';
+      dotFarve = b.afkastKr >= 0 ? 'var(--green)' : 'var(--red)';
+    } else if (b.status === 'fejl') {
+      vaerdiTekst = '–';
+      afkastTekst = 'Kunne ikke hente kurs';
+      dotFarve = 'var(--red)';
+    }
+    return `
+      <div class="ak-holding-row" onclick="aabnRedigerForm('${h.id}')">
+        <div class="ak-holding-dot" style="background:${dotFarve}"></div>
+        <div class="ak-holding-main">
+          <div class="ak-holding-navn">${escapeHtml(h.ticker)}</div>
+          <div class="ak-holding-sub">${h.antal} stk · GAK ${h.gak}${b.status === 'ok' ? ' ' + b.valuta : ''}</div>
+        </div>
+        <div class="ak-holding-right">
+          <div class="ak-holding-vaerdi">${vaerdiTekst}</div>
+          <div class="ak-holding-afkast ${afkastKlasse}">${afkastTekst}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderForm() {
+    const redigerId = (typeof formTilstand === 'object' && formTilstand.rediger) ? formTilstand.rediger : null;
+    const eksisterende = redigerId ? data.holdings.find(h => h.id === redigerId) : null;
+    return `
+      <div class="ak-modal-overlay" onmousedown="if(event.target===this) lukForm()">
+        <div class="ak-modal">
+          <div class="ak-modal-title">${redigerId ? 'Rediger investering' : 'Tilføj investering'}</div>
+
+          <div class="ak-field-label">Ticker</div>
+          <input id="ak-input-ticker" type="text" placeholder="fx AAPL, NOVO-B.CO, MAERSK-B.CO" value="${eksisterende ? escapeHtml(eksisterende.ticker) : ''}" autocomplete="off">
+          <div class="ak-field-hint">Danske aktier på Nasdaq Copenhagen skal have ".CO" til sidst.</div>
+
+          <div class="ak-field-label">Antal</div>
+          <input id="ak-input-antal" type="text" inputmode="decimal" placeholder="fx 10" value="${eksisterende ? eksisterende.antal : ''}">
+
+          <div class="ak-field-label">GAK (gennemsnitlig købskurs pr. aktie)</div>
+          <input id="ak-input-gak" type="text" inputmode="decimal" placeholder="fx 145,50" value="${eksisterende ? eksisterende.gak : ''}" onkeydown="if(event.key==='Enter'){gemHolding()}">
+
+          ${formFejl ? `<div class="ak-field-error">${escapeHtml(formFejl)}</div>` : ''}
+
+          <div class="ak-form-actions">
+            ${redigerId ? `<button class="ak-delete-btn" onclick="sletHolding('${redigerId}')">${iconTrash()}</button>` : ''}
+            <button class="ak-cancel-btn" onclick="lukForm()">Annuller</button>
+            <button class="ak-submit-btn" onclick="gemHolding()" ${formGemmer ? 'disabled' : ''}>${formGemmer ? 'Gemmer…' : 'Gem'}</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ---------- Auth-skærm (identisk mønster med budget-appen) ---------- */
+  let loginFejl = '';
+  let loginTilstand = 'login';
+
+  function renderAuthScreen() {
+    document.getElementById('app').innerHTML = `
+      <div class="ak-root">
+        <div class="ak-auth-wrap">
+          <div class="ak-auth-title">Aktier</div>
+          <div class="ak-auth-sub">${loginTilstand === 'login' ? 'Log ind for at se din portefølje' : 'Opret en konto for at komme i gang'}</div>
+          <input type="email" id="auth-email" placeholder="Email" autocomplete="email">
+          <input type="password" id="auth-password" placeholder="Adgangskode (mindst 6 tegn)" autocomplete="current-password" onkeydown="if(event.key==='Enter'){${loginTilstand === 'login' ? 'forsoegLogin' : 'forsoegOpretKonto'}()}">
+          <div class="ak-auth-actions">
+            ${loginTilstand === 'login'
+              ? '<button class="ak-auth-primary" onclick="forsoegLogin()">Log ind</button><button class="ak-auth-secondary" onclick="skiftLoginTilstand(\'opret\')">Opret konto</button>'
+              : '<button class="ak-auth-primary" onclick="forsoegOpretKonto()">Opret konto</button><button class="ak-auth-secondary" onclick="skiftLoginTilstand(\'login\')">Log ind i stedet</button>'
+            }
+          </div>
+          ${loginFejl ? '<div class="ak-auth-error">' + escapeHtml(loginFejl) + '</div>' : ''}
+        </div>
+      </div>
+      ${renderThemeToggle()}
+    `;
+  }
+  function renderLoading() {
+    document.getElementById('app').innerHTML = `
+      <div class="ak-root" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);">
+        Henter din portefølje…
+      </div>
+      ${renderThemeToggle()}
+    `;
+  }
+  window.skiftLoginTilstand = function (t) { loginTilstand = t; loginFejl = ''; renderAuthScreen(); };
+  function oversaetAuthFejl(kode) {
+    const fejl = {
+      'auth/invalid-email': 'Email-adressen ser ikke rigtig ud.',
+      'auth/user-not-found': 'Der findes ingen konto med den email.',
+      'auth/wrong-password': 'Forkert adgangskode.',
+      'auth/invalid-credential': 'Forkert email eller adgangskode.',
+      'auth/email-already-in-use': 'Der findes allerede en konto med den email.',
+      'auth/weak-password': 'Adgangskoden skal være mindst 6 tegn.',
+      'auth/too-many-requests': 'For mange forsøg. Prøv igen om lidt.'
+    };
+    return fejl[kode] || 'Der skete en fejl. Prøv igen.';
+  }
+  window.forsoegLogin = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try { await signInWithEmailAndPassword(auth, email, password); }
+    catch (e) { loginFejl = oversaetAuthFejl(e.code); renderAuthScreen(); }
+  };
+  window.forsoegOpretKonto = async function () {
+    loginFejl = '';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    if (!email || !password) { loginFejl = 'Udfyld både email og adgangskode.'; renderAuthScreen(); return; }
+    try { await createUserWithEmailAndPassword(auth, email, password); }
+    catch (e) { loginFejl = oversaetAuthFejl(e.code); renderAuthScreen(); }
+  };
+  window.logUd = async function () {
+    formTilstand = null; data = null; kursData = {}; fxCache = {};
+    await signOut(auth);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) { loginFejl = ''; loadData(); }
+    else { render(); }
+  });
+
+  function render() {
+    if (!currentUser) { renderAuthScreen(); return; }
+    if (indlaeserData || !data) { renderLoading(); return; }
+    renderApp();
+  }
+</script>
+</body>
+</html>
