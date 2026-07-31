@@ -1,4 +1,4 @@
-const CACHE_NAVN = 'budget-cache-v1';
+const CACHE_NAVN = 'budget-cache-v2';
 const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
@@ -19,13 +19,15 @@ self.addEventListener('activate', (event) => {
 
 // Netværk først (så du altid får den nyeste version, når du er online),
 // men falder tilbage til cachen hvis du er offline eller uden forbindelse.
+// "no-cache" tvinger browseren til at spørge serveren, om der er en nyere version,
+// i stedet for at genbruge en gammel kopi fra HTTP-cachen.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return; // lad Firebase/Firestore-kald gå direkte til nettet
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then((response) => {
         const kopi = response.clone();
         caches.open(CACHE_NAVN).then((cache) => cache.put(event.request, kopi));

@@ -671,6 +671,41 @@
     .bh-undo-btn { top: 10px; right: 10px; padding: 8px 12px; font-size: 12px; }
   }
 
+  .bh-opdatering-banner {
+    position: fixed;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--navy);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 11px 16px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px var(--modal-shadow);
+    animation: bh-modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: calc(100vw - 24px);
+  }
+  .bh-opdatering-banner button {
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    background: #fff;
+    color: var(--navy);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.12s ease;
+  }
+  .bh-opdatering-banner button:hover { transform: translateY(-1px); }
+
   .bh-theme-toggle {
     position: fixed;
     right: 18px;
@@ -2655,6 +2690,48 @@
       navigator.serviceWorker.register('sw.js').catch((e) => console.error('Kunne ikke registrere service worker:', e));
     });
   }
+
+  // ---- Automatisk opdaterings-tjek ----
+  // Sammenligner sidens "version-mærke" (ETag/Last-Modified fra serveren) med det, der var gældende
+  // da appen blev åbnet. Er der kommet en nyere version på GitHub, vises en lille "Opdater"-besked.
+  let kendtVersionsMaerke = null;
+  let opdateringsBannerVist = false;
+
+  async function hentVersionsMaerke() {
+    try {
+      const res = await fetch(window.location.pathname, { method: 'HEAD', cache: 'no-store' });
+      if (!res.ok) return null;
+      return res.headers.get('ETag') || res.headers.get('Last-Modified');
+    } catch (e) {
+      return null; // offline eller lokal test — spring bare over
+    }
+  }
+
+  function visOpdateringsBanner() {
+    if (opdateringsBannerVist) return;
+    opdateringsBannerVist = true;
+    const banner = document.createElement('div');
+    banner.className = 'bh-opdatering-banner';
+    banner.innerHTML = `
+      <span>En ny version af appen er klar</span>
+      <button type="button" onclick="window.location.reload()">Opdater</button>
+    `;
+    document.body.appendChild(banner);
+  }
+
+  async function tjekForOpdatering() {
+    const maerke = await hentVersionsMaerke();
+    if (!maerke) return;
+    if (kendtVersionsMaerke === null) { kendtVersionsMaerke = maerke; return; }
+    if (maerke !== kendtVersionsMaerke) visOpdateringsBanner();
+  }
+
+  // Gem versionsmærket ved start, tjek når appen får fokus igen, og ellers hver 30. minut
+  tjekForOpdatering();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tjekForOpdatering();
+  });
+  setInterval(tjekForOpdatering, 30 * 60 * 1000);
 </script>
 </body>
 </html>
