@@ -339,6 +339,8 @@
   .bh-safety-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .bh-safety-actions button { min-height: 36px; }
   .bh-backup-box { border: 1px solid var(--border); background: var(--entry-bg); border-radius: 10px; padding: 12px; }
+  .bh-backup-year-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; }
+  .bh-backup-year-row input { width: 90px; min-height: 36px; padding: 6px 8px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font: inherit; }
   .bh-sortering {
     display: flex; align-items: center; justify-content: flex-end; gap: 8px;
     margin: 0;
@@ -874,7 +876,7 @@
   }
 
   let aar = new Date().getFullYear();
-  let maanedIndex = 0; // start altid i Januar
+  let maanedIndex = new Date().getMonth(); // Åbn altid den aktuelle måned.
   let data = null;
   let aktivForm = null; // 'indkomst' | 'udgifter' | null
   let saldoModalAaben = false;
@@ -963,6 +965,7 @@
         m[type].every(p => p && typeof p.id === 'string' && p.id.length > 0 &&
           typeof p.kategori === 'string' && typeof p.beskrivelse === 'string' &&
           Number.isFinite(p.beloeb) && p.beloeb > 0 &&
+          (p.beloebUdtryk === undefined || typeof p.beloebUdtryk === 'string') &&
           (p.fast === undefined || typeof p.fast === 'boolean') &&
           (p.seriesId === undefined || typeof p.seriesId === 'string'))));
   }
@@ -1062,13 +1065,23 @@
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
-  async function collectBackup(owner, includePending = false) {
+  async function collectBackup(owner, includePending = false, selectedYear = null) {
+    if (selectedYear !== null) {
+      if (!Number.isInteger(selectedYear) || selectedYear < 1000 || selectedYear > 9999) throw new Error('Skriv et gyldigt årstal med fire cifre.');
+      const ref = doc(db, 'budget', owner, 'years', String(selectedYear));
+      const snap = await getDoc(ref);
+      if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet. Prøv igen.');
+      const pending = includePending ? pendingWrites.get(ref.path) : null;
+      const value = pending?.owner === owner ? cloneValue(pending.value) : snap.exists() ? snap.data() : null;
+      if (!value) throw new Error('Der er ikke gemt et budget for ' + selectedYear + '.');
+      return { format: 'budget-backup', version: 1, scope: 'year', ownerUid: owner, createdAt: new Date().toISOString(), years: { [selectedYear]: value }, meta: {} };
+    }
     const [years, meta] = await Promise.all([
       getDocsFromServer(collection(db, 'budget', owner, 'years')),
       getDoc(doc(db, 'budget', owner, 'meta', 'kategorier'))
     ]);
     if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet. Prøv igen.');
-    const result = { format: 'budget-backup', version: 1, ownerUid: owner, createdAt: new Date().toISOString(), years: {}, meta: meta.exists() ? meta.data() : {} };
+    const result = { format: 'budget-backup', version: 1, scope: 'all', ownerUid: owner, createdAt: new Date().toISOString(), years: {}, meta: meta.exists() ? meta.data() : {} };
     years.forEach(snap => { result.years[snap.id] = snap.data(); });
     if (includePending) {
       for (const job of pendingWrites.values()) {
@@ -1079,20 +1092,22 @@
     }
     return result;
   }
-  async function downloadBackup() {
+  async function downloadBackup(selectedYear = null) {
     if (backupBusy || saveCount || !currentUser) return;
     backupBusy = true; updateSaveStatus();
     try {
-      const backup = await collectBackup(currentUser.uid, true);
-      downloadJSON(backup, 'budget-backup');
-      alert('Backup klar: ' + Object.keys(backup.years).length + ' år. Gem filen et sikkert sted. Den indeholder kun denne kontos budget.');
+      const backup = await collectBackup(currentUser.uid, true, selectedYear);
+      const years = Object.keys(backup.years).sort();
+      downloadJSON(backup, selectedYear === null ? 'budget-alle-aar' : 'budget-' + selectedYear);
+      alert('Backup hentet for ' + (currentUser.email || 'din konto') + '.\n\nÅr: ' + (years.join(', ') || 'ingen gemte år') +
+        (selectedYear === null ? '\nKategorier og indstillinger er også med.' : '\nKun dette års posteringer og startsaldi er med. Kategorier og indstillinger ændres ikke ved gendannelse.'));
     } catch (error) {
       // Ved netværksfejl kan kladden stadig reddes, men den er ikke en fuld backup.
       if (pendingWrites.size) {
         const draft = { format: 'budget-draft', version: 1, ownerUid: currentUser.uid, createdAt: new Date().toISOString(), documents: [...pendingWrites.values()].filter(j => j.owner === currentUser.uid).map(j => ({ path: j.ref.path, value: j.value })) };
         downloadJSON(draft, 'budget-ikke-gemte-aendringer');
         alert('Hele backupen kunne ikke hentes. Dine ikke-gemte ændringer er hentet som en redningsfil. Den er ikke en fuld backup og skal gendannes manuelt.');
-      } else alert('Backup kunne ikke hentes. Tjek forbindelsen og prøv igen.');
+      } else alert('Backup kunne ikke hentes. ' + (error.message || 'Tjek forbindelsen og prøv igen.'));
     } finally { backupBusy = false; updateSaveStatus(); }
   }
   function validateBackup(backup, owner) {
@@ -1100,6 +1115,8 @@
     if (backup.ownerUid !== owner) throw new Error('Denne backup tilhører en anden konto. Log ind på den konto, som backupen blev hentet fra.');
     if (!backup.years || Array.isArray(backup.years) || typeof backup.years !== 'object' || !validMeta(backup.meta)) throw new Error('Backupens indhold er ugyldigt.');
     const entries = Object.entries(backup.years);
+    if (backup.scope !== undefined && !['all', 'year'].includes(backup.scope)) throw new Error('Backupens omfang er ukendt.');
+    if (backup.scope === 'year' && entries.length !== 1) throw new Error('En årsbackup skal indeholde præcis ét år.');
     if (entries.length > 100) throw new Error('Denne gendannelse understøtter højst 100 år ad gangen.');
     for (const [year, value] of entries) {
       if (!/^[1-9]\d{3}$/.test(year) || !value || !validMonths(value.months)) throw new Error('Ugyldige budgetdata for år ' + year + '. Intet er ændret.');
@@ -1117,14 +1134,17 @@
       const backup = JSON.parse(await file.text());
       const entries = validateBackup(backup, owner);
       const yearsText = entries.map(([year]) => year).sort().join(', ') || 'ingen';
-      if (!confirm('Gendan backup for din konto?\n\nÅr: ' + yearsText + '\nDisse år og dine kategorier/indstillinger erstattes. Andre år bevares.\n\nFørst hentes en backup af den nuværende gemte version.')) return;
+      const restoreMeta = backup.scope !== 'year';
+      if (!confirm('Gendan backup for din konto?\n\nÅr: ' + yearsText +
+        (restoreMeta ? '\nDisse år og dine kategorier/indstillinger erstattes. Andre år bevares.' : '\nKun dette års posteringer og startsaldi erstattes. Andre år, kategorier og indstillinger bevares.') +
+        '\n\nFørst hentes en backup af den nuværende gemte version.')) return;
       const before = await collectBackup(owner);
       downloadJSON(before, 'budget-foer-gendannelse');
       if (!confirm('Gem den netop hentede sikkerhedskopi, før du fortsætter.\n\nFortsæt med at gendanne de viste år?')) return;
       await runTransaction(db, async transaction => {
         if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet.');
         const writes = entries.map(([year, value]) => ({ ref: doc(db, 'budget', owner, 'years', year), value, before: before.years[year] || null }));
-        writes.push({ ref: doc(db, 'budget', owner, 'meta', 'kategorier'), value: backup.meta, before: before.meta });
+        if (restoreMeta) writes.push({ ref: doc(db, 'budget', owner, 'meta', 'kategorier'), value: backup.meta, before: before.meta });
         for (const item of writes) {
           const snap = await transaction.get(item.ref);
           const remote = snap.exists() ? snap.data() : (item.ref.id === 'kategorier' ? {} : null);
@@ -1183,7 +1203,7 @@
         const findesAllerede = data[i].udgifter.some(p => p.seriesId === kilde.seriesId);
         const udelukket = fasteUndtagelser.includes(fastNoegle(kilde.seriesId, aar, i));
         if (!findesAllerede && !udelukket) {
-          data[i].udgifter.push({ id: uid(), kategori: kilde.kategori, beskrivelse: kilde.beskrivelse, beloeb: kilde.beloeb, fast: true, seriesId: kilde.seriesId });
+          data[i].udgifter.push({ id: uid(), kategori: kilde.kategori, beskrivelse: kilde.beskrivelse, beloeb: kilde.beloeb, beloebUdtryk: postBeloebTekst(kilde), fast: true, seriesId: kilde.seriesId });
           aendret = true;
         }
       });
@@ -1206,7 +1226,7 @@
         const findesAllerede = data[0].udgifter.some(p => p.seriesId === kilde.seriesId);
         const udelukket = fasteUndtagelser.includes(fastNoegle(kilde.seriesId, aar, 0));
         if (!findesAllerede && !udelukket) {
-          data[0].udgifter.push({ id: uid(), kategori: kilde.kategori, beskrivelse: kilde.beskrivelse, beloeb: kilde.beloeb, fast: true, seriesId: kilde.seriesId });
+          data[0].udgifter.push({ id: uid(), kategori: kilde.kategori, beskrivelse: kilde.beskrivelse, beloeb: kilde.beloeb, beloebUdtryk: postBeloebTekst(kilde), fast: true, seriesId: kilde.seriesId });
           aendret = true;
         }
       });
@@ -1286,6 +1306,13 @@
     redigererId = null;
     render();
   }
+  function postBeloebTekst(post) {
+    const udtryk = post.beloebUdtryk;
+    const sum = typeof udtryk === 'string' ? beregnBeloebUdtryk(udtryk) : NaN;
+    // Ældre versioner kan have ændret summen uden at kende regnestykket.
+    return Number.isFinite(sum) && Math.abs(sum - post.beloeb) < 0.000001
+      ? udtryk : String(post.beloeb).replace('.', ',');
+  }
   function startRediger(type, id) {
     const entry = data[maanedIndex][type].find(p => p.id === id);
     if (!entry) return;
@@ -1297,7 +1324,7 @@
     const beloebEl = document.getElementById('form-beloeb');
     if (kategoriEl) kategoriEl.value = entry.kategori;
     if (beskrivelseEl) beskrivelseEl.value = entry.beskrivelse || '';
-    if (beloebEl) { beloebEl.value = String(entry.beloeb).replace('.', ','); beloebEl.focus(); }
+    if (beloebEl) { beloebEl.value = postBeloebTekst(entry); beloebEl.focus(); opdaterBeloebPreview(); }
     const fastEl = document.getElementById('form-fast');
     if (fastEl) fastEl.checked = !!entry.fast;
   }
@@ -1320,13 +1347,14 @@
         entry.kategori = kategoriEl.value;
         entry.beskrivelse = (beskrivelseEl.value || '').trim();
         entry.beloeb = beloeb;
+        entry.beloebUdtryk = beloebEl.value.trim();
         if (fastEl) {
           if (fastValgt && !entry.fast) { entry.fast = true; entry.seriesId = entry.seriesId || uid(); }
           else if (!fastValgt && entry.fast) { entry.fast = false; delete entry.seriesId; }
         }
       }
     } else {
-      const post = { id: uid(), kategori: kategoriEl.value, beskrivelse: (beskrivelseEl.value || '').trim(), beloeb: beloeb };
+      const post = { id: uid(), kategori: kategoriEl.value, beskrivelse: (beskrivelseEl.value || '').trim(), beloeb: beloeb, beloebUdtryk: beloebEl.value.trim() };
       if (fastValgt) { post.fast = true; post.seriesId = uid(); }
       data[maanedIndex][type].push(post);
     }
@@ -1378,6 +1406,8 @@
         entry.kategori = sidsteHandling.forrigeEntry.kategori;
         entry.beskrivelse = sidsteHandling.forrigeEntry.beskrivelse;
         entry.beloeb = sidsteHandling.forrigeEntry.beloeb;
+        if (sidsteHandling.forrigeEntry.beloebUdtryk !== undefined) entry.beloebUdtryk = sidsteHandling.forrigeEntry.beloebUdtryk;
+        else delete entry.beloebUdtryk;
         if (sidsteHandling.forrigeEntry.fast) { entry.fast = true; entry.seriesId = sidsteHandling.forrigeEntry.seriesId; }
         else { delete entry.fast; delete entry.seriesId; }
       }
@@ -1551,7 +1581,7 @@
   async function kopierTilNaesteMaaned(id) {
     const entry = data[maanedIndex].udgifter.find(p => p.id === id);
     if (!entry) return;
-    const nyPost = { id: uid(), kategori: entry.kategori, beskrivelse: entry.beskrivelse, beloeb: entry.beloeb };
+    const nyPost = { id: uid(), kategori: entry.kategori, beskrivelse: entry.beskrivelse, beloeb: entry.beloeb, beloebUdtryk: postBeloebTekst(entry) };
     if (maanedIndex === 11) {
       const naesteAar = aar + 1;
       const owner = currentUser.uid;
@@ -2006,16 +2036,14 @@
               </span>
               ${iconChevron('right')}
             </button>
-            <div class="bh-backup-box">
-              <div class="bh-indstillinger-raekke-titel">Backup &amp; gendannelse</div>
-              <p>Gem alle år, kategorier og faste udgifter fra din konto i en fil. Backup er manuel — hent gerne en ny efter større ændringer.</p>
-              <div class="bh-safety-actions">
-                <button type="button" class="bh-add-btn" onclick="downloadBackup()">Hent backup</button>
-                <button type="button" class="bh-add-btn" onclick="document.getElementById('budget-backup-file').click()">Gendan fra fil</button>
-              </div>
-              <input id="budget-backup-file" type="file" accept=".json,application/json" hidden onchange="restoreBackup(this.files[0]);this.value=''">
-              <p>Gendannelse erstatter de år, der findes i filen. Andre år bevares. Kun backup fra denne konto kan bruges.</p>
-            </div>
+            <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('backup')">
+              <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-navy);color:var(--navy);">↓</span>
+              <span class="bh-indstillinger-raekke-tekst">
+                <span class="bh-indstillinger-raekke-titel">Backup &amp; gendannelse</span>
+                <span class="bh-indstillinger-raekke-sub">Hent alle år eller ét bestemt år</span>
+              </span>
+              ${iconChevron('right')}
+            </button>
             <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('hjaelp')">
               <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-navy);color:var(--navy);">${iconHelp()}</span>
               <span class="bh-indstillinger-raekke-tekst">
@@ -2041,9 +2069,35 @@
     `;
   }
 
+  function renderBackupSektion() {
+    return `
+      <div class="bh-hjaelp-intro">Backup for <strong>${escapeHtml(currentUser.email || 'din konto')}</strong>. Filen indeholder kun dit budget.</div>
+      <div class="bh-backup-box">
+        <div class="bh-indstillinger-raekke-titel">Alle gemte år</div>
+        <p>Alle års indtægter, udgifter, regnestykker og startsaldi samt dine kategorier og indstillinger for faste udgifter.</p>
+        <button type="button" class="bh-add-btn" onclick="downloadBackup()">Hent alle år</button>
+      </div>
+      <div class="bh-backup-box">
+        <div class="bh-indstillinger-raekke-titel">Ét bestemt år</div>
+        <p>Kun det valgte års posteringer, regnestykker og startsaldi. Gendannelse af denne fil bevarer andre år, kategorier og indstillinger.</p>
+        <div class="bh-backup-year-row">
+          <label for="backup-year">Årstal</label>
+          <input id="backup-year" type="number" min="1000" max="9999" step="1" value="${aar}" inputmode="numeric" aria-label="Årstal til backup">
+          <button type="button" class="bh-add-btn" onclick="downloadBackup(Number(document.getElementById('backup-year').value))">Hent valgt år</button>
+        </div>
+      </div>
+      <div class="bh-backup-box">
+        <div class="bh-indstillinger-raekke-titel">Gendan fra en backup</div>
+        <p>Vælg en fil fra denne konto. Du ser hvilke år der erstattes, før du bekræfter. Først hentes en sikkerhedskopi af din nuværende gemte version.</p>
+        <button type="button" class="bh-add-btn" onclick="document.getElementById('budget-backup-file').click()">Vælg backupfil</button>
+        <input id="budget-backup-file" type="file" accept=".json,application/json" hidden onchange="restoreBackup(this.files[0]);this.value=''">
+      </div>
+      <div class="bh-hjaelp-intro">Backup er manuel. Gem filen et sikkert sted, og hent gerne en ny efter større ændringer.</div>
+    `;
+  }
   function renderIndstillingerDetalje() {
-    const titler = { udgifter: 'Udgiftskategorier', indkomst: 'Indtægtskategorier', udseende: 'Udseende', hjaelp: 'Hjælp & guide' };
-    const indhold = indstillingerVisning === 'udseende'
+    const titler = { udgifter: 'Udgiftskategorier', indkomst: 'Indtægtskategorier', udseende: 'Udseende', hjaelp: 'Hjælp & guide', backup: 'Backup & gendannelse' };
+    const indhold = indstillingerVisning === 'backup' ? renderBackupSektion() : indstillingerVisning === 'udseende'
       ? renderUdseendeSektion()
       : indstillingerVisning === 'hjaelp'
         ? renderHjaelpSektion()
