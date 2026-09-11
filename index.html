@@ -333,6 +333,32 @@
   .bh-legend-amount { font-family: 'Inconsolata', monospace; font-size: 15px; font-weight: 600; color: var(--text); flex-shrink: 0; }
 
   .bh-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .bh-save-status { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 20000; padding: 10px 18px; border-radius: 9px; background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: 0 4px 20px var(--shadow); font-size: 13px; }
+  .bh-safety-panel { max-width: 640px; margin: 40px auto; }
+  .bh-safety-panel p, .bh-backup-box p { font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
+  .bh-safety-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bh-safety-actions button { min-height: 36px; }
+  .bh-backup-box { border: 1px solid var(--border); background: var(--entry-bg); border-radius: 10px; padding: 12px; }
+  .bh-sortering {
+    display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+    margin: 0;
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+  }
+  .bh-sortering select {
+    max-width: 100%; height: 30px; padding: 4px 8px;
+    font: inherit; color: var(--text); background: var(--bg);
+    border: 1px solid var(--border); border-radius: 7px; cursor: pointer;
+  }
+  .bh-sortering select:hover { background: var(--hover); }
+  .bh-sortering select:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+  body.bh-dark .bh-sortering select { color-scheme: dark; }
+  .bh-expense-header { gap: 10px; flex-wrap: wrap; }
+  .bh-list-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .bh-list-actions .bh-add-btn { height: 30px; white-space: nowrap; }
+  @media (max-width: 540px) {
+    .bh-sortering label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .bh-list-actions { gap: 6px; }
+  }
   .bh-list-title { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
   .bh-list-title.income { color: var(--green); }
   .bh-list-title.expense { color: var(--red); }
@@ -751,7 +777,7 @@
     onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
   import {
-    getFirestore, doc, getDoc, setDoc
+    getFirestore, doc, getDocFromServer as getDoc, collection, getDocsFromServer, runTransaction
   } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -892,56 +918,265 @@
   function kategoriDocRef() {
     return doc(db, 'budget', currentUser.uid, 'meta', 'kategorier');
   }
-  async function hentKategorier() {
-    try {
-      const snap = await getDoc(kategoriDocRef());
-      const d = snap.exists() ? snap.data() : {};
-      brugerKategorier = {
-        indkomst: Array.isArray(d.indkomst) ? d.indkomst : [],
-        udgifter: Array.isArray(d.udgifter) ? d.udgifter : []
-      };
-      fasteUdgifterAktiveret = !!d.fasteUdgifterAktiveret;
-      fasteUndtagelser = Array.isArray(d.fasteUndtagelser) ? d.fasteUndtagelser : [];
-    } catch (e) {
-      console.error('Kunne ikke hente kategorier:', e);
-      brugerKategorier = { indkomst: [], udgifter: [] };
+  async function hentKategorier(owner, generation) {
+    const ref = doc(db, 'budget', owner, 'meta', 'kategorier');
+    const snap = await getDoc(ref);
+    if (currentUser?.uid !== owner || generation !== loadGeneration) return false;
+    const d = snap.exists() ? snap.data() : {};
+    if (!validMeta(d)) throw new Error('Kategorierne har et ukendt format.');
+    rememberSnapshot(ref, snap);
+    brugerKategorier = { indkomst: d.indkomst || [], udgifter: d.udgifter || [] };
+    fasteUdgifterAktiveret = !!d.fasteUdgifterAktiveret;
+    fasteUndtagelser = d.fasteUndtagelser || [];
+    return true;
+  }
+  function gemKategorier() {
+    if (!currentUser || loadError || indlaeserData) return Promise.resolve();
+    return safeWrite(kategoriDocRef(), { ...brugerKategorier, fasteUdgifterAktiveret, fasteUndtagelser });
+  }
+
+  // Alle referencer er bundet til den aktive konto; ingen fælles budgetdata.
+
+  let loadError = '';
+  let saveError = '';
+  let saveConflict = false;
+  let saveQueue = Promise.resolve();
+  let saveCount = 0;
+  let backupBusy = false;
+  let loadGeneration = 0;
+  const savedVersions = new Map();
+  const pendingWrites = new Map();
+  function cloneValue(value) { return JSON.parse(JSON.stringify(value)); }
+  function canonical(value) {
+    if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+    if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+    return JSON.stringify(value);
+  }
+  function rememberSnapshot(ref, snap) {
+    savedVersions.set(ref.path, snap.exists() ? cloneValue(snap.data()) : null);
+  }
+  function validMonths(months) {
+    return Array.isArray(months) && months.length === 12 && months.every(m =>
+      m && typeof m === 'object' && (m.startsaldo == null || Number.isFinite(m.startsaldo)) &&
+      ['indkomst', 'udgifter'].every(type => Array.isArray(m[type]) &&
+        new Set(m[type].map(p => p && p.id)).size === m[type].length &&
+        m[type].every(p => p && typeof p.id === 'string' && p.id.length > 0 &&
+          typeof p.kategori === 'string' && typeof p.beskrivelse === 'string' &&
+          Number.isFinite(p.beloeb) && p.beloeb > 0 &&
+          (p.fast === undefined || typeof p.fast === 'boolean') &&
+          (p.seriesId === undefined || typeof p.seriesId === 'string'))));
+  }
+  function validMeta(meta) {
+    return meta && typeof meta === 'object' && ['indkomst', 'udgifter'].every(k =>
+      meta[k] === undefined || (Array.isArray(meta[k]) && meta[k].every(s => typeof s === 'string'))) &&
+      (meta.fasteUdgifterAktiveret === undefined || typeof meta.fasteUdgifterAktiveret === 'boolean') &&
+      (meta.fasteUndtagelser === undefined || (Array.isArray(meta.fasteUndtagelser) && meta.fasteUndtagelser.every(s => typeof s === 'string')));
+  }
+  function updateSaveStatus() {
+    const host = document.getElementById('app');
+    host.inert = saveCount > 0 || backupBusy;
+    let status = document.getElementById('budget-save-status');
+    if (!status) {
+      status = document.createElement('div');
+      status.id = 'budget-save-status';
+      status.setAttribute('role', 'status');
+      status.className = 'bh-save-status';
+      document.body.appendChild(status);
     }
+    status.textContent = backupBusy ? 'Arbejder med backup…' : saveCount > 0 ? 'Gemmer ændringer…' : '';
+    status.hidden = !status.textContent;
+  }
+  function safeWrite(ref, value) {
+    const owner = currentUser.uid;
+    pendingWrites.set(ref.path, { ref, value: cloneValue(value), owner });
+    saveCount++;
+    updateSaveStatus();
+    saveQueue = saveQueue.then(async () => {
+      const job = pendingWrites.get(ref.path);
+      if (!job || saveError || currentUser?.uid !== owner) return;
+      const expected = savedVersions.get(ref.path);
+      if (expected === undefined) throw new Error('Budgettet skal indlæses igen før gemning.');
+      await runTransaction(db, async transaction => {
+        if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet.');
+        const snap = await transaction.get(ref);
+        const remote = snap.exists() ? snap.data() : null;
+        // En tidligere gemning kan være gennemført, selv om svaret gik tabt.
+        if (canonical(remote) === canonical(job.value)) return;
+        if (canonical(remote) !== canonical(expected)) {
+          const error = new Error('Budgettet er ændret i en anden fane eller på en anden enhed.');
+          error.code = 'budget/conflict';
+          throw error;
+        }
+        transaction.set(ref, job.value);
+      });
+      if (currentUser?.uid !== owner) return;
+      savedVersions.set(ref.path, cloneValue(job.value));
+      if (pendingWrites.get(ref.path) === job) pendingWrites.delete(ref.path);
+    }).catch(error => {
+      if (currentUser?.uid !== owner) return;
+      saveConflict = error.code === 'budget/conflict';
+      saveError = saveConflict ? error.message : 'Ændringerne er ikke gemt. Tjek forbindelsen og prøv igen.';
+      console.error('Gemning stoppet:', error);
+    }).finally(() => {
+      saveCount--;
+      updateSaveStatus();
+      if (saveCount === 0 && saveError) render();
+    });
+    return saveQueue;
+  }
+  async function retrySave() {
+    if (saveCount || saveConflict) return;
+    saveError = '';
+    for (const job of [...pendingWrites.values()]) safeWrite(job.ref, job.value);
+    await saveQueue;
     render();
   }
-  async function gemKategorier() {
-    try {
-      await setDoc(kategoriDocRef(), { ...brugerKategorier, fasteUdgifterAktiveret, fasteUndtagelser });
-    } catch (e) {
-      console.error('Kunne ikke gemme kategorier:', e);
-      visToast('Kunne ikke gemme kategorien — tjek din forbindelse og prøv igen.', 'error');
-    }
+  function renderSafetyScreen() {
+    const message = saveError || loadError;
+    document.getElementById('app').innerHTML = `<div class="bh-root"><div class="bh-panel bh-safety-panel">
+      <div class="bh-list-title">${saveError ? 'Ændringerne mangler at blive gemt' : 'Budgettet kunne ikke indlæses'}</div>
+      <p>${escapeHtml(message)}</p>
+      <p>${saveError ? 'Dine ændringer er stadig i denne åbne fane. Hent en backup, før du lukker eller genindlæser siden.' : 'Redigering er stoppet, så et tomt budget ikke overskriver dine gemte data.'}</p>
+      <div class="bh-safety-actions">
+        ${saveError ? `${!saveConflict ? '<button class="bh-add-btn" onclick="retrySave()">Prøv at gemme igen</button>' : ''}<button class="bh-add-btn" onclick="downloadBackup()">Hent backup med mine ændringer</button>
+        <button class="bh-add-btn" onclick="reloadBudget()">Hent gemt version igen</button>` : '<button class="bh-add-btn" onclick="reloadBudget()">Prøv igen</button><button class="bh-add-btn" onclick="logUd()">Log ud</button>'}
+      </div></div></div>`;
+    updateSaveStatus();
   }
+  async function reloadBudget() {
+    if (saveCount || backupBusy) return;
+    if (pendingWrites.size && !confirm('Kassér de ikke-gemte ændringer i denne fane og hent den gemte version? Hent først en backup, hvis du vil beholde ændringerne.')) return;
+    pendingWrites.clear();
+    saveError = ''; saveConflict = false; loadError = '';
+    await loadData();
+  }
+  window.addEventListener('beforeunload', event => {
+    if (pendingWrites.size || saveCount || backupBusy) { event.preventDefault(); event.returnValue = ''; }
+  });
+
+  function downloadJSON(value, prefix) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = prefix + '-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  async function collectBackup(owner, includePending = false) {
+    const [years, meta] = await Promise.all([
+      getDocsFromServer(collection(db, 'budget', owner, 'years')),
+      getDoc(doc(db, 'budget', owner, 'meta', 'kategorier'))
+    ]);
+    if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet. Prøv igen.');
+    const result = { format: 'budget-backup', version: 1, ownerUid: owner, createdAt: new Date().toISOString(), years: {}, meta: meta.exists() ? meta.data() : {} };
+    years.forEach(snap => { result.years[snap.id] = snap.data(); });
+    if (includePending) {
+      for (const job of pendingWrites.values()) {
+        if (job.owner !== owner) continue;
+        if (job.ref.path.endsWith('/meta/kategorier')) result.meta = cloneValue(job.value);
+        else result.years[job.ref.id] = cloneValue(job.value);
+      }
+    }
+    return result;
+  }
+  async function downloadBackup() {
+    if (backupBusy || saveCount || !currentUser) return;
+    backupBusy = true; updateSaveStatus();
+    try {
+      const backup = await collectBackup(currentUser.uid, true);
+      downloadJSON(backup, 'budget-backup');
+      alert('Backup klar: ' + Object.keys(backup.years).length + ' år. Gem filen et sikkert sted. Den indeholder kun denne kontos budget.');
+    } catch (error) {
+      // Ved netværksfejl kan kladden stadig reddes, men den er ikke en fuld backup.
+      if (pendingWrites.size) {
+        const draft = { format: 'budget-draft', version: 1, ownerUid: currentUser.uid, createdAt: new Date().toISOString(), documents: [...pendingWrites.values()].filter(j => j.owner === currentUser.uid).map(j => ({ path: j.ref.path, value: j.value })) };
+        downloadJSON(draft, 'budget-ikke-gemte-aendringer');
+        alert('Hele backupen kunne ikke hentes. Dine ikke-gemte ændringer er hentet som en redningsfil. Den er ikke en fuld backup og skal gendannes manuelt.');
+      } else alert('Backup kunne ikke hentes. Tjek forbindelsen og prøv igen.');
+    } finally { backupBusy = false; updateSaveStatus(); }
+  }
+  function validateBackup(backup, owner) {
+    if (!backup || backup.format !== 'budget-backup' || backup.version !== 1) throw new Error('Filen er ikke en understøttet budget-backup.');
+    if (backup.ownerUid !== owner) throw new Error('Denne backup tilhører en anden konto. Log ind på den konto, som backupen blev hentet fra.');
+    if (!backup.years || Array.isArray(backup.years) || typeof backup.years !== 'object' || !validMeta(backup.meta)) throw new Error('Backupens indhold er ugyldigt.');
+    const entries = Object.entries(backup.years);
+    if (entries.length > 100) throw new Error('Denne gendannelse understøtter højst 100 år ad gangen.');
+    for (const [year, value] of entries) {
+      if (!/^[1-9]\d{3}$/.test(year) || !value || !validMonths(value.months)) throw new Error('Ugyldige budgetdata for år ' + year + '. Intet er ændret.');
+      if (new TextEncoder().encode(JSON.stringify(value)).length > 750000) throw new Error('År ' + year + ' er for stort til sikker gendannelse.');
+    }
+    if (new TextEncoder().encode(JSON.stringify(backup)).length > 6000000) throw new Error('Backupen er for stor til gendannelse i én omgang.');
+    return entries;
+  }
+  async function restoreBackup(file) {
+    if (!file || backupBusy || saveCount || pendingWrites.size || !currentUser) return;
+    const owner = currentUser.uid;
+    backupBusy = true; updateSaveStatus();
+    try {
+      if (file.size > 6000000) throw new Error('Backupfilen er for stor.');
+      const backup = JSON.parse(await file.text());
+      const entries = validateBackup(backup, owner);
+      const yearsText = entries.map(([year]) => year).sort().join(', ') || 'ingen';
+      if (!confirm('Gendan backup for din konto?\n\nÅr: ' + yearsText + '\nDisse år og dine kategorier/indstillinger erstattes. Andre år bevares.\n\nFørst hentes en backup af den nuværende gemte version.')) return;
+      const before = await collectBackup(owner);
+      downloadJSON(before, 'budget-foer-gendannelse');
+      if (!confirm('Gem den netop hentede sikkerhedskopi, før du fortsætter.\n\nFortsæt med at gendanne de viste år?')) return;
+      await runTransaction(db, async transaction => {
+        if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet.');
+        const writes = entries.map(([year, value]) => ({ ref: doc(db, 'budget', owner, 'years', year), value, before: before.years[year] || null }));
+        writes.push({ ref: doc(db, 'budget', owner, 'meta', 'kategorier'), value: backup.meta, before: before.meta });
+        for (const item of writes) {
+          const snap = await transaction.get(item.ref);
+          const remote = snap.exists() ? snap.data() : (item.ref.id === 'kategorier' ? {} : null);
+          if (canonical(remote) !== canonical(item.before)) throw new Error('Budgettet er ændret siden sikkerhedskopien blev hentet. Prøv igen.');
+        }
+        for (const item of writes) transaction.set(item.ref, item.value);
+      });
+      if (currentUser?.uid !== owner) return;
+      savedVersions.clear(); sammenligningAarCache = {}; handlingsHistorik = [];
+      indstillingerAaben = false;
+      await loadData();
+      alert('Backupen er gendannet. Andre konti er ikke ændret.');
+    } catch (error) { alert('Gendannelse blev stoppet: ' + error.message); }
+    finally { backupBusy = false; updateSaveStatus(); }
+  }
+  Object.assign(window, { retrySave, reloadBudget, downloadBackup, restoreBackup });
 
   let indlaeserData = false;
 
   async function loadData() {
-    indlaeserData = true;
+    if (!currentUser || pendingWrites.size || saveCount) return;
+    const owner = currentUser.uid, year = aar, generation = ++loadGeneration;
+    const ref = doc(db, 'budget', owner, 'years', String(year));
+    indlaeserData = true; loadError = ''; data = null;
     render();
     try {
-      const snap = await getDoc(yearDocRef(aar));
-      data = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
-    } catch (e) {
-      console.error('Kunne ikke hente budgetdata:', e);
-      data = tomtAar();
-    } finally {
+      if (!await hentKategorier(owner, generation)) return;
+      const snap = await getDoc(ref);
+      if (generation !== loadGeneration || currentUser?.uid !== owner) return;
+      const value = snap.exists() ? snap.data() : null;
+      if (value && !validMonths(value.months)) throw new Error('Årets budget har et ukendt format.');
+      rememberSnapshot(ref, snap);
+      data = value ? value.months : tomtAar();
+      if (fasteUdgifterAktiveret) await synkroniserFasteUdgifterFraForrigeAar();
+      if (generation !== loadGeneration || currentUser?.uid !== owner) return;
       indlaeserData = false;
-      render();
-    }
-    if (fasteUdgifterAktiveret) {
-      await synkroniserFasteUdgifterFraForrigeAar();
-      anvendFasteUdgifter();
+      if (fasteUdgifterAktiveret) anvendFasteUdgifter();
+    } catch (e) {
+      if (generation !== loadGeneration || currentUser?.uid !== owner) return;
+      console.error('Indlæsning stoppet:', e);
+      data = null;
+      loadError = 'Dine gemte data kunne ikke hentes sikkert. Tjek forbindelsen og prøv igen.';
+    } finally {
+      if (generation === loadGeneration && currentUser?.uid === owner) { indlaeserData = false; render(); }
     }
   }
+
   // Kopierer faste (gentagende) udgifter fremad gennem det indlæste år,
   // så en udgift markeret som "fast" automatisk dukker op i alle efterfølgende måneder.
   function anvendFasteUdgifter() {
     if (!fasteUdgifterAktiveret || !data) return;
-    let aendret = false;
+    let aendret = canonical(data) !== canonical(savedVersions.get(yearDocRef(aar).path)?.months || tomtAar());
     for (let i = 1; i < 12; i++) {
       const kilder = data[i - 1].udgifter.filter(p => p.fast && p.seriesId);
       kilder.forEach(kilde => {
@@ -958,10 +1193,13 @@
   // Henter december fra forrige år og kopierer faste udgifter med over i januar, hvis de mangler.
   async function synkroniserFasteUdgifterFraForrigeAar() {
     if (!fasteUdgifterAktiveret || !currentUser || !data) return;
+    const owner = currentUser.uid, generation = loadGeneration;
     try {
-      const ref = doc(db, 'budget', currentUser.uid, 'years', String(aar - 1));
+      const ref = doc(db, 'budget', owner, 'years', String(aar - 1));
       const snap = await getDoc(ref);
-      if (!snap.exists() || !snap.data().months) return;
+      if (generation !== loadGeneration || currentUser?.uid !== owner) return;
+      if (!snap.exists()) return;
+      if (!validMonths(snap.data().months)) throw new Error("Forrige år har et ukendt format.");
       const forrigeDecember = snap.data().months[11].udgifter.filter(p => p.fast && p.seriesId);
       let aendret = false;
       forrigeDecember.forEach(kilde => {
@@ -974,7 +1212,7 @@
       });
       if (aendret) render();
     } catch (e) {
-      console.error('Kunne ikke synkronisere faste udgifter fra forrige år:', e);
+      throw e;
     }
   }
   function skiftFasteUdgifter() {
@@ -989,16 +1227,13 @@
       }
     });
   }
-  async function saveData() {
-    try {
-      await setDoc(yearDocRef(aar), { months: data });
-    } catch (e) {
-      console.error('Kunne ikke gemme budgetdata:', e);
-      visToast('Kunne ikke gemme ændringen — tjek din forbindelse og prøv igen.', 'error');
-    }
+  function saveData() {
+    if (!currentUser || !data || loadError || indlaeserData) return Promise.resolve();
+    return safeWrite(yearDocRef(aar), { months: data });
   }
 
   function skiftAar(delta) {
+    if (saveCount || pendingWrites.size || backupBusy) return;
     aar += delta;
     aktivForm = null;
     saldoModalAaben = false;
@@ -1072,7 +1307,7 @@
     const beloebEl = document.getElementById('form-beloeb');
     if (!kategoriEl || !beloebEl) return;
     const beloeb = beregnBeloebUdtryk(beloebEl.value);
-    if (!beloeb || beloeb <= 0) {
+    if (!Number.isFinite(beloeb) || beloeb <= 0) {
       beloebEl.focus();
       return;
     }
@@ -1279,6 +1514,7 @@
   }
 
   document.addEventListener('keydown', (e) => {
+    if (saveCount || backupBusy || saveError || loadError || indlaeserData || !currentUser) return;
     if (e.key === 'Escape' && sammenligningAaben) { lukSammenligning(); return; }
     if (e.key === 'Escape' && detaljePanelAaben) {
       if (detaljeVisning !== null) { tilbageTilDetaljePoster(); return; }
@@ -1318,17 +1554,23 @@
     const nyPost = { id: uid(), kategori: entry.kategori, beskrivelse: entry.beskrivelse, beloeb: entry.beloeb };
     if (maanedIndex === 11) {
       const naesteAar = aar + 1;
+      const owner = currentUser.uid;
+      backupBusy = true; updateSaveStatus();
       try {
-        const ref = doc(db, 'budget', currentUser.uid, 'years', String(naesteAar));
-        const snap = await getDoc(ref);
-        const remoteData = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
-        remoteData[0].udgifter.push(nyPost);
-        await setDoc(ref, { months: remoteData });
-        visToast('Kopieret til Januar ' + naesteAar);
+        const ref = doc(db, 'budget', owner, 'years', String(naesteAar));
+        await runTransaction(db, async transaction => {
+          if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet.');
+          const snap = await transaction.get(ref);
+          const remoteData = snap.exists() ? snap.data().months : tomtAar();
+          if (!validMonths(remoteData)) throw new Error('Ukendt budgetformat.');
+          if (!remoteData[0].udgifter.some(p => p.id === nyPost.id)) remoteData[0].udgifter.push(nyPost);
+          transaction.set(ref, { months: remoteData });
+        });
+        if (currentUser?.uid === owner) visToast('Kopieret til Januar ' + naesteAar);
       } catch (e) {
-        console.error('Kunne ikke kopiere til næste år:', e);
-        visToast('Kunne ikke kopiere udgiften — tjek din forbindelse og prøv igen.', 'error');
-      }
+        visToast('Kunne ikke kopiere udgiften — tjek forbindelsen og prøv igen.', 'error');
+      } finally { backupBusy = false; updateSaveStatus(); }
+
     } else {
       data[maanedIndex + 1].udgifter.push(nyPost);
       saveData();
@@ -1386,7 +1628,7 @@
     const input = document.getElementById('form-startsaldo');
     if (!input) return;
     const tal = parseFloat(input.value.trim().replace(',', '.'));
-    if (isNaN(tal)) { input.focus(); return; }
+    if (!Number.isFinite(tal)) { input.focus(); return; }
     // Det tal brugeren skriver skal være det, der ENDER med at stå i "Saldo på konto" —
     // så vi regner baglæns og gemmer den tilsvarende start-af-måned-saldo, der giver præcis det resultat.
     const { indAlt, udgAlt } = beregnMaaned(data[maanedIndex]);
@@ -1559,12 +1801,58 @@
     return raekkefoelge.flatMap(k => grupper[k]);
   }
 
+  const SORTERINGSVALG = [
+    ['kategori', 'Kategori'],
+    ['nyeste', 'Nyeste først'],
+    ['aeldste', 'Ældste først'],
+    ['hoejeste', 'Højeste beløb'],
+    ['laveste', 'Laveste beløb']
+  ];
+  const sorteringHukommelse = new Map();
+  function sorteringsNoegle() {
+    return 'budget-sortering:' + currentUser.uid + ':' + aar + ':' + maanedIndex;
+  }
+  function hentSortering() {
+    const noegle = sorteringsNoegle();
+    let valg = sorteringHukommelse.get(noegle);
+    if (!valg) {
+      try { valg = localStorage.getItem(noegle); } catch (_) { /* Brug standard ved blokeret lager. */ }
+    }
+    return SORTERINGSVALG.some(([id]) => id === valg) ? valg : 'kategori';
+  }
+  function skiftSortering(valg) {
+    if (!SORTERINGSVALG.some(([id]) => id === valg)) return;
+    const noegle = sorteringsNoegle();
+    sorteringHukommelse.set(noegle, valg);
+    try { localStorage.setItem(noegle, valg); } catch (_) { /* Husk stadig valget i denne session. */ }
+    render();
+    document.getElementById('udgift-sortering')?.focus({ preventScroll: true });
+  }
+  function sorterUdgifter(liste, valg) {
+    // Listen gemmes i tilføjelsesrækkefølge. Sortér kun en kopi til visning,
+    // så redigering og fortryd bevarer posteringernes oprindelige placering.
+    if (valg === 'kategori') return grupperEfterKategori(liste);
+    const kopi = [...liste];
+    if (valg === 'nyeste') return kopi.reverse();
+    if (valg === 'hoejeste') return kopi.sort((a, b) => b.beloeb - a.beloeb);
+    if (valg === 'laveste') return kopi.sort((a, b) => a.beloeb - b.beloeb);
+    return kopi;
+  }
+  function renderSortering() {
+    const valgt = hentSortering();
+    return '<div class="bh-sortering"><label for="udgift-sortering">Sortér efter</label>' +
+      '<select id="udgift-sortering" onchange="skiftSortering(this.value)">' +
+      SORTERINGSVALG.map(([id, tekst]) => '<option value="' + id + '"' + (id === valgt ? ' selected' : '') + '>' + tekst + '</option>').join('') +
+      '</select></div>';
+  }
+  window.skiftSortering = skiftSortering;
+
   function renderEntryList(list, type) {
     if (list.length === 0) {
       return '<div class="bh-empty">Ingen ' + (type === 'indkomst' ? 'indtægter' : 'udgifter') + ' registreret endnu.</div>';
     }
     const kategorier = alleKategorierForType(type);
-    const grupperet = grupperEfterKategori(list);
+    const grupperet = type === 'udgifter' ? sorterUdgifter(list, hentSortering()) : grupperEfterKategori(list);
     return grupperet.map(p => `
       <div class="bh-entry ${redigererId === p.id ? 'redigeres' : ''} ${markeredePoster.has(p.id) ? 'markeret' : ''}" onclick="skiftMarkering('${p.id}', event)">
         <div class="bh-entry-left">
@@ -1718,6 +2006,16 @@
               </span>
               ${iconChevron('right')}
             </button>
+            <div class="bh-backup-box">
+              <div class="bh-indstillinger-raekke-titel">Backup &amp; gendannelse</div>
+              <p>Gem alle år, kategorier og faste udgifter fra din konto i en fil. Backup er manuel — hent gerne en ny efter større ændringer.</p>
+              <div class="bh-safety-actions">
+                <button type="button" class="bh-add-btn" onclick="downloadBackup()">Hent backup</button>
+                <button type="button" class="bh-add-btn" onclick="document.getElementById('budget-backup-file').click()">Gendan fra fil</button>
+              </div>
+              <input id="budget-backup-file" type="file" accept=".json,application/json" hidden onchange="restoreBackup(this.files[0]);this.value=''">
+              <p>Gendannelse erstatter de år, der findes i filen. Andre år bevares. Kun backup fra denne konto kan bruges.</p>
+            </div>
             <button type="button" class="bh-indstillinger-raekke" onclick="aabnIndstillingerSektion('hjaelp')">
               <span class="bh-indstillinger-raekke-ikon" style="background:var(--soft-navy);color:var(--navy);">${iconHelp()}</span>
               <span class="bh-indstillinger-raekke-tekst">
@@ -2024,12 +2322,16 @@
       sammenligningAarCache[aarVal] = data;
       return;
     }
+    const owner = currentUser.uid, generation = loadGeneration;
     try {
       const snap = await getDoc(yearDocRef(aarVal));
-      sammenligningAarCache[aarVal] = snap.exists() && snap.data().months ? snap.data().months : tomtAar();
+      if (currentUser?.uid !== owner || generation !== loadGeneration) return;
+      if (snap.exists() && !validMonths(snap.data().months)) throw new Error('Ukendt budgetformat.');
+      sammenligningAarCache[aarVal] = snap.exists() ? snap.data().months : tomtAar();
     } catch (e) {
+      if (currentUser?.uid !== owner || generation !== loadGeneration) return;
       console.error('Kunne ikke hente sammenligningsdata for', aarVal, e);
-      sammenligningAarCache[aarVal] = tomtAar();
+      loadError = 'År ' + aarVal + ' kunne ikke hentes til sammenligning. Prøv igen.';
     }
   }
   function vaelgSammenligningMaaned(side, index) {
@@ -2488,9 +2790,12 @@
         </div>
 
         <div class="bh-panel">
-          <div class="bh-list-header">
+          <div class="bh-list-header bh-expense-header">
             <div class="bh-list-title expense">Udgifter</div>
-            <button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+            <div class="bh-list-actions">
+              ${renderSortering()}
+              <button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconPlus()} Tilføj</button>
+            </div>
           </div>
           ${beregnMarkeretAntal('udgifter') > 0 ? `
             <div class="bh-markering-bar">
@@ -2601,17 +2906,23 @@
   };
 
   window.logUd = async function () {
+    if (saveCount || pendingWrites.size || backupBusy) return;
     aktivForm = null;
     data = null;
     await signOut(auth);
   };
 
   onAuthStateChanged(auth, (user) => {
+    loadGeneration++;
     currentUser = user;
+    data = null; loadError = ''; saveError = ''; saveConflict = false;
+    savedVersions.clear(); pendingWrites.clear(); sammenligningAarCache = {};
+    brugerKategorier = { indkomst: [], udgifter: [] }; fasteUndtagelser = []; fasteUdgifterAktiveret = false;
+    handlingsHistorik = []; markeredePoster = new Set(); indstillingerAaben = false;
+    aktivForm = null; saldoModalAaben = false; detaljePanelAaben = false; sammenligningAaben = false;
     if (user) {
       loginFejl = '';
-      hentKategorier();
-      loadData();
+      saveQueue.finally(() => { if (currentUser?.uid === user.uid) loadData(); });
     } else {
       render();
     }
@@ -2619,8 +2930,10 @@
 
   function render() {
     if (!currentUser) { renderAuthScreen(); return; }
+    if (saveError || loadError) { renderSafetyScreen(); return; }
     if (indlaeserData || !data) { renderLoading(); return; }
     renderApp();
+    updateSaveStatus();
   }
   let blodOpdatering = false; // true mens en "blød" gentegning kører, så modaler ikke pop'er ind på ny
   function modalAnimStil() {
