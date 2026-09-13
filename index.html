@@ -2683,6 +2683,37 @@
     if (detaljeKategori !== null) return renderDetaljeKategoriVisning();
     return renderDetaljeKategoriListe();
   }
+  function soegUdgifter(tekst) {
+    const ord = tekst.trim().toLocaleLowerCase('da-DK').split(/\s+/).filter(Boolean);
+    if (!ord.length || !data) return [];
+    return data.flatMap((m, maaned) => m.udgifter
+      .filter(p => !erOpsparingsKategori(p.kategori))
+      .filter(p => {
+        const navn = ((p.beskrivelse || '') + ' ' + p.kategori).toLocaleLowerCase('da-DK');
+        return ord.every(o => navn.includes(o));
+      }).map(p => ({ ...p, maaned })))
+      .sort((a, b) => b.maaned - a.maaned);
+  }
+  function renderUdgiftSoegning(tekst) {
+    const poster = soegUdgifter(tekst);
+    if (!poster.length) return '<div class="bh-empty-panel">Ingen udgifter matcher din søgning i ' + aar + '.</div>';
+    return `<div class="bh-panel-sub" role="status">${poster.length} ${poster.length === 1 ? 'udgift' : 'udgifter'} i ${aar} · I alt ${kr(poster.reduce((sum,p) => sum + p.beloeb, 0))}</div>
+      <div class="bh-post-liste">${poster.map(p => `
+        <div class="bh-post-raekke">
+          <span class="bh-post-navn">
+            <span class="bh-post-navn-titel">${escapeHtml(p.beskrivelse || p.kategori)}</span>
+            <span class="bh-post-navn-sub">${MAANEDER[p.maaned]} ${aar} · ${escapeHtml(p.kategori)}</span>
+          </span>
+          <span class="bh-post-beloeb">${kr(p.beloeb)}</span>
+        </div>`).join('')}</div>`;
+  }
+  window.opdaterUdgiftSoegning = function(tekst) {
+    const aktiv = Boolean(tekst.trim());
+    document.getElementById('detalje-kategorier').hidden = aktiv;
+    const resultater = document.getElementById('detalje-soegeresultater');
+    resultater.hidden = !aktiv;
+    resultater.innerHTML = aktiv ? renderUdgiftSoegning(tekst) : '';
+  };
   function renderDetaljeKategoriListe() {
     const kategorier = beregnKategoriTotaler();
     const kategoriListe = alleKategorierForType('udgifter');
@@ -2706,7 +2737,10 @@
         <div class="bh-modal bh-modal-detaljer"${modalAnimStil()}>
           <div class="bh-modal-title">Detaljeret forbrug – ${aar}</div>
           <div class="bh-panel-sub" style="margin:-8px 0 2px;">Tryk på en kategori for at se posterne bagved</div>
-          ${indhold}
+          <label for="detalje-soegning" style="font-size:12px;color:var(--text-muted)">Søg efter en udgift i ${aar}</label>
+          <input type="search" id="detalje-soegning" placeholder="Fx Spotify, mad eller transport" autocomplete="off" oninput="opdaterUdgiftSoegning(this.value)">
+          <div id="detalje-soegeresultater" aria-live="polite" hidden></div>
+          <div id="detalje-kategorier">${indhold}</div>
           <div class="bh-form-actions">
             <button type="button" class="bh-cancel-btn" style="flex:1;" onclick="lukDetaljePanel()">Luk</button>
           </div>
