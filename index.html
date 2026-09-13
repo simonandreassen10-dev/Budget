@@ -219,6 +219,7 @@
     border-radius: 7px; width: 28px; height: 28px; display: flex; align-items: center;
     justify-content: center; cursor: pointer;
   }
+  .bh-year-select { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 5px; font: inherit; cursor: pointer; }
   .bh-year-btn:hover { background: var(--hover); }
 
   .bh-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 14px; }
@@ -831,7 +832,7 @@
     },
     {
       titel: 'Saldo på konto — hvad skal jeg skrive der?',
-      tekst: 'Det her forsøger at følge din faktiske bankkonto. Tryk "Angiv" og skriv, hvad der reelt stod på kontoen ved starten af måneden. Herefter regner appen automatisk videre måned for måned ud fra dine indtægter og udgifter, så du kan se, hvor du forventes at stå fremover.'
+      tekst: 'Tryk "Ret" og angiv den ønskede saldo efter den valgte måneds posteringer. Budgettet regner videre måned for måned og fra december til januar. En manuelt rettet saldo har forrang, indtil du vælger "Brug automatisk videreført saldo". Uden tidligere data starter beregningen ved 0 kr.'
     },
     {
       titel: 'Opsparing & investering',
@@ -1074,6 +1075,11 @@
       const pending = includePending ? pendingWrites.get(ref.path) : null;
       const value = pending?.owner === owner ? cloneValue(pending.value) : snap.exists() ? snap.data() : null;
       if (!value) throw new Error('Der er ikke gemt et budget for ' + selectedYear + '.');
+      if (!validMonths(value.months)) throw new Error('Årets budget har et ukendt format.');
+      if (value.months[0].startsaldo == null) {
+        const history = await hentAarHistorik(owner);
+        value.months[0].startsaldo = saldoFraTidligereAar(history, selectedYear);
+      }
       return { format: 'budget-backup', version: 1, scope: 'year', ownerUid: owner, createdAt: new Date().toISOString(), years: { [selectedYear]: value }, meta: {} };
     }
     const [years, meta] = await Promise.all([
@@ -1162,13 +1168,42 @@
   }
   Object.assign(window, { retrySave, reloadBudget, downloadBackup, restoreBackup });
 
+  let overfoertStartsaldo = 0;
+  let gemteAar = [];
+
+  function saldoFraTidligereAar(years, year) {
+    let saldo = 0;
+    Object.keys(years).filter(y => /^\d{4}$/.test(y) && Number(y) < year).sort().forEach(y => {
+      if (!validMonths(years[y].months)) throw new Error('Et tidligere år har et ukendt format.');
+      years[y].months.forEach(m => {
+        if (m.startsaldo != null) saldo = m.startsaldo;
+        const { indAlt, udgAlt } = beregnMaaned(m);
+        saldo += indAlt - udgAlt;
+      });
+    });
+    return saldo;
+  }
+  async function hentAarHistorik(owner) {
+    const snapshots = await getDocsFromServer(collection(db, 'budget', owner, 'years'));
+    if (currentUser?.uid !== owner) throw new Error('Kontoen er skiftet.');
+    const years = {};
+    snapshots.forEach(snap => { if (/^\d{4}$/.test(snap.id)) years[snap.id] = snap.data(); });
+    return years;
+  }
+  function aarValgmuligheder() {
+    const now = new Date().getFullYear();
+    const years = new Set([...gemteAar, aar, aar - 1, aar + 1]);
+    for (let y = now - 25; y <= now + 5; y++) years.add(y);
+    return [...years].filter(y => y >= 1000 && y <= 9999).sort((a,b) => b-a)
+      .map(y => '<option value="' + y + '"' + (y === aar ? ' selected' : '') + '>' + y + '</option>').join('');
+  }
   let indlaeserData = false;
 
   async function loadData() {
     if (!currentUser || pendingWrites.size || saveCount) return;
     const owner = currentUser.uid, year = aar, generation = ++loadGeneration;
     const ref = doc(db, 'budget', owner, 'years', String(year));
-    indlaeserData = true; loadError = ''; data = null;
+    indlaeserData = true; loadError = ''; data = null; overfoertStartsaldo = 0; gemteAar = [];
     render();
     try {
       if (!await hentKategorier(owner, generation)) return;
@@ -1176,6 +1211,10 @@
       if (generation !== loadGeneration || currentUser?.uid !== owner) return;
       const value = snap.exists() ? snap.data() : null;
       if (value && !validMonths(value.months)) throw new Error('Årets budget har et ukendt format.');
+      const history = await hentAarHistorik(owner);
+      if (generation !== loadGeneration || currentUser?.uid !== owner) return;
+      overfoertStartsaldo = saldoFraTidligereAar(history, year);
+      gemteAar = Object.keys(history).map(Number);
       rememberSnapshot(ref, snap);
       data = value ? value.months : tomtAar();
       if (fasteUdgifterAktiveret) await synkroniserFasteUdgifterFraForrigeAar();
@@ -1252,9 +1291,12 @@
     return safeWrite(yearDocRef(aar), { months: data });
   }
 
-  function skiftAar(delta) {
+  function skiftAar(delta) { return vaelgAar(aar + delta); }
+  function vaelgAar(value) {
+    const year = Number(value);
+    if (!Number.isInteger(year) || year < 1000 || year > 9999 || year === aar) return;
     if (saveCount || pendingWrites.size || backupBusy) return;
-    aar += delta;
+    aar = year;
     aktivForm = null;
     saldoModalAaben = false;
     detaljePanelAaben = false;
@@ -1630,7 +1672,7 @@
   function effektivStartsaldo(index) {
     const m = data[index];
     if (m.startsaldo !== null && m.startsaldo !== undefined) return m.startsaldo;
-    if (index === 0) return 0; // ingen start-saldo angivet endnu — antag 0 kr, så kortet virker med det samme
+    if (index === 0) return overfoertStartsaldo;
     const forrige = effektivStartsaldo(index - 1);
     if (forrige === null) return null;
     // Bruger de FULDE beløb (indAlt/udgAlt) her, ikke de "rigtige" ind/udg —
@@ -2126,6 +2168,8 @@
       <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukForm()">
         <div class="bh-modal">
           <div class="bh-modal-title">Ret saldo på konto</div>
+          <p style="font-size:12px;color:var(--text-muted);line-height:1.5">Angiv den ønskede saldo efter denne måneds posteringer. Saldoen føres automatisk videre til næste måned og næste år.</p>
+          ${data[maanedIndex].startsaldo != null ? '<button class="bh-cancel-btn" style="margin-bottom:10px" onclick="brugAutomatiskSaldo()">Brug automatisk videreført saldo</button>' : ''}
           <input type="text" id="form-startsaldo" inputmode="decimal" placeholder="Saldo, fx 12500" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-startsaldo-${uid()}" onkeydown="handleStartsaldoKeydown(event)">
           <div class="bh-form-actions">
             <button class="bh-submit-btn" onclick="gemStartsaldo()">Gem saldo</button>
@@ -2776,7 +2820,7 @@
           </div>
           <div class="bh-year-nav">
             <button class="bh-year-btn" onclick="skiftAar(-1)" aria-label="Forrige år">${iconChevron('left')}</button>
-            ${aar}
+            <select class="bh-year-select" aria-label="Vælg år" onchange="vaelgAar(this.value)">${aarValgmuligheder()}</select>
             <button class="bh-year-btn" onclick="skiftAar(1)" aria-label="Næste år">${iconChevron('right')}</button>
           </div>
         </div>
@@ -3009,6 +3053,12 @@
   }
 
   window.skiftAar = skiftAar;
+  window.vaelgAar = vaelgAar;
+  window.brugAutomatiskSaldo = function() {
+    if (!data || indlaeserData || saveCount || pendingWrites.size) return;
+    data[maanedIndex].startsaldo = null;
+    saldoModalAaben = false; saveData(); render();
+  };
   window.skiftMaaned = skiftMaaned;
   window.visCmpTip = visCmpTip;
   window.skjulCmpTip = skjulCmpTip;
