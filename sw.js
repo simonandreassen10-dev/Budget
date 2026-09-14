@@ -1,5 +1,5 @@
-const CACHE_NAVN = 'budget-cache-v2';
-const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+const CACHE_NAVN = 'budget-cache-v3-wallet';
+const APP_SHELL = ['./index.html', './manifest.json', './budget-wallet-20260914-192.png', './budget-wallet-20260914-512.png', './budget-wallet-20260914-180.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
