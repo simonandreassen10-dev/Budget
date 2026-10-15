@@ -900,6 +900,15 @@
 .bh-year-metrics {grid-template-columns:repeat(2,minmax(0,1fr))}
 .bh-year-metrics small {line-height:1.6}
 @media(max-width:540px){.bh-year-metrics{grid-template-columns:1fr}.bh-insight-tabs button{font-size:12px;padding:10px 7px}}
+  .bh-saldo-label {display:block;font-size:12px;font-weight:600;margin:16px 0 8px;color:var(--text)}
+  .bh-saldo-label span {color:var(--text-muted);font-weight:400}
+  .bh-saldo-adjustment {border-top:1px solid var(--border);margin-top:16px}
+  .bh-saldo-adjustment-row {display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px}
+  .bh-saldo-adjustment-row input,.bh-saldo-adjustment-row select {min-width:0;margin:0}
+  .bh-saldo-result {display:flex;flex-direction:column;gap:8px;padding:14px;margin:18px 0;background:var(--entry-bg);border:1px solid var(--border);border-radius:10px}
+  .bh-saldo-result span {font-size:12px;color:var(--text-muted)}
+  .bh-saldo-result strong {font-size:20px;overflow-wrap:anywhere}
+  #gem-saldo-btn:disabled {opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -1824,23 +1833,42 @@
       const startEffektiv = effektivStartsaldo(maanedIndex);
       const { indAlt, udgAlt } = beregnMaaned(data[maanedIndex]);
       const nuvaerendeVisning = startEffektiv + indAlt - udgAlt;
-      input.value = String(nuvaerendeVisning).replace('.', ',');
+      input.value = saldoInputTekst(nuvaerendeVisning);
+      opdaterSaldoPreview();
       input.focus();
       input.select();
     }
   }
+  function afrundSaldo(value) { return Number(value.toFixed(2)); }
+  function saldoInputTekst(value) { return value.toFixed(2).replace('.', ','); }
+  function laesSaldoBeloeb(value) {
+    let text=String(value).trim().replace(/\s/g,'');
+    if (/^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(text)) text=text.replace(/\./g,'');
+    if (!/^-?\d+([.,]\d{1,2})?$/.test(text)) return null;
+    const number=Number(text.replace(',','.'));
+    return Number.isFinite(number) && Math.abs(number)<=Number.MAX_SAFE_INTEGER/100 ? afrundSaldo(number) : null;
+  }
+  function beregnSaldoJustering(base,amount,operation) {
+    const saldo=laesSaldoBeloeb(base), change=String(amount).trim()===''?0:laesSaldoBeloeb(amount);
+    if(saldo===null || change===null || change<0 || !['plus','minus'].includes(operation)) return null;
+    const result=saldo+(operation==='minus'?-change:change);
+    return Number.isFinite(result) && Math.abs(result)<=Number.MAX_SAFE_INTEGER/100 ? afrundSaldo(result) : null;
+  }
+  function saldoFraForm() {
+    return beregnSaldoJustering(document.getElementById('form-startsaldo').value,document.getElementById('form-saldo-justering').value,document.getElementById('form-saldo-retning').value);
+  }
+  function opdaterSaldoPreview() {
+    const saldo=saldoFraForm();
+    document.getElementById('saldo-preview').textContent=saldo===null?'Angiv et gyldigt beløb med højst to decimaler.':new Intl.NumberFormat('da-DK',{style:'currency',currency:'DKK'}).format(saldo);
+    document.getElementById('gem-saldo-btn').disabled=saldo===null;
+  }
   function gemStartsaldo() {
-    const input = document.getElementById('form-startsaldo');
-    if (!input) return;
-    const tal = parseFloat(input.value.trim().replace(',', '.'));
-    if (!Number.isFinite(tal)) { input.focus(); return; }
-    // Det tal brugeren skriver skal være det, der ENDER med at stå i "Saldo på konto" —
-    // så vi regner baglæns og gemmer den tilsvarende start-af-måned-saldo, der giver præcis det resultat.
+    const tal=saldoFraForm();
+    if(tal===null) { opdaterSaldoPreview(); return; }
     const { indAlt, udgAlt } = beregnMaaned(data[maanedIndex]);
-    data[maanedIndex].startsaldo = tal - (indAlt - udgAlt);
-    saldoModalAaben = false;
-    saveData();
-    render();
+    data[maanedIndex].startsaldo=afrundSaldo(tal-(indAlt-udgAlt));
+    saldoModalAaben=false;
+    saveData();render();
   }
   function handleStartsaldoKeydown(e) {
     if (e.key === 'Enter') gemStartsaldo();
@@ -2303,9 +2331,12 @@
           <div class="bh-modal-title">Ret saldo på konto</div>
           <p style="font-size:12px;color:var(--text-muted);line-height:1.5">Angiv den ønskede saldo efter denne måneds posteringer. Saldoen føres automatisk videre til næste måned og næste år.</p>
           ${data[maanedIndex].startsaldo != null ? '<button class="bh-cancel-btn" style="margin-bottom:10px" onclick="brugAutomatiskSaldo()">Brug automatisk videreført saldo</button>' : ''}
-          <input type="text" id="form-startsaldo" inputmode="decimal" placeholder="Saldo, fx 12500" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-startsaldo-${uid()}" onkeydown="handleStartsaldoKeydown(event)">
+          <label class="bh-saldo-label" for="form-startsaldo">Saldo før justering</label>
+          <input oninput="opdaterSaldoPreview()" type="text" id="form-startsaldo" inputmode="decimal" placeholder="Saldo, fx 12500" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-startsaldo-${uid()}" onkeydown="handleStartsaldoKeydown(event)">
+          <div class="bh-saldo-adjustment"><label class="bh-saldo-label" for="form-saldo-justering">Justér saldoen <span>(valgfrit)</span></label><div class="bh-saldo-adjustment-row"><select id="form-saldo-retning" aria-label="Tilføj eller træk fra" onchange="opdaterSaldoPreview()"><option value="plus">+ Tilføj</option><option value="minus">− Træk fra</option></select><input id="form-saldo-justering" type="text" inputmode="decimal" placeholder="0,00" aria-label="Beløb til justering" autocomplete="off" oninput="opdaterSaldoPreview()" onkeydown="handleStartsaldoKeydown(event)"></div></div>
+          <div class="bh-saldo-result"><span>Ny saldo på konto</span><strong id="saldo-preview" role="status" aria-live="polite"></strong></div>
           <div class="bh-form-actions">
-            <button class="bh-submit-btn" onclick="gemStartsaldo()">Gem saldo</button>
+            <button id="gem-saldo-btn" class="bh-submit-btn" onclick="gemStartsaldo()">Gem saldo</button>
             <button class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
           </div>
         </div>
@@ -3311,6 +3342,7 @@
   window.aabnLukForm = aabnLukForm;
   window.kopierTilNaesteMaaned = kopierTilNaesteMaaned;
   window.angivStartsaldo = angivStartsaldo;
+  window.opdaterSaldoPreview = opdaterSaldoPreview;
   window.gemStartsaldo = gemStartsaldo;
   window.handleStartsaldoKeydown = handleStartsaldoKeydown;
   window.fortryd = fortryd;
