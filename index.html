@@ -939,6 +939,10 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
 .bh-explorer input,.bh-explorer select{background:var(--entry-bg);color:var(--text);border:1px solid var(--border);border-radius:8px}
 .bh-explorer input::placeholder{color:var(--text-faint)}
 .bh-explorer input:focus,.bh-explorer select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--focus-ring)}
+.bh-explorer,.bh-modal{overflow-anchor:none}
+.bh-explorer .group-payments{padding:0;overflow:hidden}
+.bh-explorer .bx-payment-content{padding:0 14px 7px}
+.bh-explorer .bx-options-panel{overflow:hidden;padding:0}
 </style>
 </head>
 <body>
@@ -3127,12 +3131,11 @@ let markup='';
 if(!items.length)markup='<div class="empty"><strong>Ingen posteringer fundet</strong><br>Prøv en anden søgning eller vælg en længere periode.<br><button class="back" id="bx-reset">Vis alle posteringer</button></div>';
 else if(searching)markup=items.slice(0,state.limit).map(r=>payment(r,true)).join('');
 else if(!state.category)markup=items.slice(0,state.limit).map((g,i)=>`<button class="category-row" data-category="${i}"><span class="category-icon" aria-hidden="true">◫</span><span class="row-main"><strong>${esc(g.name)}</strong><small>${g.count} ${g.count===1?'betaling':'betalinger'}</small></span><span class="row-amount">${kr(g.amount)}</span><span class="row-arrow" aria-hidden="true">›</span></button>`).join('');
-else markup=items.slice(0,state.limit).map((g,i)=>{const open=state.expanded.toLocaleLowerCase('da-DK')===g.name.toLocaleLowerCase('da-DK'),under=sorted(list.filter(r=>postName(r).toLocaleLowerCase('da-DK')===g.name.toLocaleLowerCase('da-DK')));return `<section class="group"><button id="bx-group-${i}" class="group-button" aria-expanded="${open}" aria-controls="bx-payments-${i}" data-group="${i}"><span class="row-main"><strong>${esc(g.name)}</strong><small>${g.count} ${g.count===1?'betaling':'betalinger'} · ${open?'Skjul betalinger':'Se betalinger'}</small></span><span class="row-amount">${kr(g.amount)}</span><span class="row-arrow" aria-hidden="true">${open?'⌃':'⌄'}</span></button><div id="bx-payments-${i}" class="group-payments" ${open?'':'hidden'}>${open?`<div class="expanded-note">Betalinger for ${esc(g.name)} · ${period}</div>`+under.slice(0,state.paymentLimit).map(r=>payment(r)).join('')+(under.length>state.paymentLimit?`<button class="back" id="bx-more-payments">Vis de næste ${Math.min(6,under.length-state.paymentLimit)} betalinger</button>`:''):''}</div></section>`;}).join('');
+else markup=items.slice(0,state.limit).map((g,i)=>{const open=state.expanded.toLocaleLowerCase('da-DK')===g.name.toLocaleLowerCase('da-DK'),under=sorted(list.filter(r=>postName(r).toLocaleLowerCase('da-DK')===g.name.toLocaleLowerCase('da-DK')));return `<section class="group"><button id="bx-group-${i}" class="group-button" aria-expanded="${open}" aria-controls="bx-payments-${i}" data-group="${i}"><span class="row-main"><strong>${esc(g.name)}</strong><small data-fold-label>${g.count} ${g.count===1?'betaling':'betalinger'} · ${open?'Skjul betalinger':'Se betalinger'}</small></span><span class="row-amount">${kr(g.amount)}</span><span class="row-arrow" aria-hidden="true">${open?'⌃':'⌄'}</span></button><div id="bx-payments-${i}" class="group-payments" ${open?'':'hidden'}>${open?renderPaymentContent(g.name):''}</div></section>`;}).join('');
 $('results').innerHTML=markup;
 $('results').querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>enterCategory(items[Number(b.dataset.category)].name)));
 $('results').querySelectorAll('[data-group]').forEach(b=>b.addEventListener('click',()=>fold(items[Number(b.dataset.group)].name,b.id.replace('bx-',''))));
-$('results').querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openEdit(b.dataset.edit)));
-$('more-payments')?.addEventListener('click',()=>{state.paymentLimit+=6;render();});
+wirePayments($('results'));
 $('reset')?.addEventListener('click',()=>{resetView();state.from=0;state.to=11;$('period').value='all';$('from').value='0';$('to').value='11';$('custom').hidden=true;render();});
 $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} af ${items.length} ${searching?'betalinger':state.category?'poster':'kategorier'}</span>${items.length>state.limit?'<button class="soft" id="bx-more">Vis flere</button>':'<span>Alle vist</span>'}`:'';$('more')?.addEventListener('click',()=>{state.limit+=8;render();});
 }
@@ -3147,16 +3150,51 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     }
     function resetState(){state={kind:'udgifter',from:0,to:11,category:'',query:'',sort:'desc',expanded:'',limit:8,paymentLimit:6};}
     function refresh(){rows=detaljePosterFra(data);}
+    async function animateHeight(panel,opening){
+      if(!panel)return;
+      panel.hidden=false;
+      panel.style.height='auto';
+      const height=panel.getBoundingClientRect().height || panel.scrollHeight;
+      if(reduced() || !panel.animate){panel.hidden=!opening;panel.style.height='';return;}
+      panel.style.height=opening?'0px':height+'px';
+      const animation=panel.animate([{height:(opening?0:height)+'px',opacity:opening?0:1},{height:(opening?height:0)+'px',opacity:opening?1:0}],{duration:220,easing:'cubic-bezier(.2,.7,.2,1)',fill:'both'});
+      try{await animation.finished;}catch(_){}
+      finally{
+        // Apply the final layout before removing animation styles: no full-height flash.
+        panel.hidden=!opening;panel.style.height=opening?'auto':'0px';
+        animation.cancel();panel.style.height='';
+      }
+    }
+    function renderPaymentContent(name){
+      const list=sorted(selected().filter(r=>postName(r).toLocaleLowerCase('da-DK')===name.toLocaleLowerCase('da-DK')));
+      const period=state.from===0&&state.to===11?'Hele '+aar:state.from===state.to?months[state.from]+' '+aar:short[state.from]+' – '+short[state.to]+' '+aar;
+      return '<div class="bx-payment-content"><div class="expanded-note">Betalinger for '+esc(name)+' · '+period+'</div>'+list.slice(0,state.paymentLimit).map(r=>payment(r)).join('')+(list.length>state.paymentLimit?'<button class="back" data-more-payments>Vis de næste '+Math.min(6,list.length-state.paymentLimit)+' betalinger</button>':'')+'</div>';
+    }
+    function wirePayments(root){
+      root.querySelectorAll('[data-edit]').forEach(button=>{button.onclick=()=>openEdit(button.dataset.edit);});
+      root.querySelectorAll('[data-more-payments]').forEach(button=>{button.onclick=()=>{state.paymentLimit+=6;const panel=button.closest('.group-payments');panel.innerHTML=renderPaymentContent(state.expanded);wirePayments(panel);};});
+    }
+    function setExpanded(button,expanded){
+      if(!button)return;
+      button.setAttribute('aria-expanded',String(expanded));
+      const label=button.querySelector('[data-fold-label]');if(label)label.textContent=label.textContent.replace(expanded?'Se betalinger':'Skjul betalinger',expanded?'Skjul betalinger':'Se betalinger');
+      const arrow=button.querySelector('.row-arrow');if(arrow)arrow.textContent=expanded?'⌃':'⌄';
+    }
     async function fold(name,buttonId){
-      if(busy)return;busy=true;
-      const targetDialog=dialog;
-      const previous=state.expanded,opening=previous.toLocaleLowerCase('da-DK')!==name.toLocaleLowerCase('da-DK');
-      const old=dialog.querySelector('.group-button[aria-expanded="true"]');
-      if(old){const panel=$(old.getAttribute('aria-controls').replace('bx-',''));if(panel)await motion(panel,[{height:panel.scrollHeight+'px',opacity:1},{height:'0px',opacity:0}]);}
-      if(dialog!==targetDialog || !dialog?.open){busy=false;return;}
-      state.expanded=opening?name:'';state.paymentLimit=6;render();
-      if(opening){const b=$(buttonId),panel=b?document.getElementById(b.getAttribute('aria-controls')):null;if(panel)await motion(panel,[{height:'0px',opacity:0},{height:panel.scrollHeight+'px',opacity:1}]);}
-      if(dialog===targetDialog)$(buttonId)?.focus({preventScroll:true});busy=false;
+      if(busy || !dialog)return;busy=true;
+      const targetDialog=dialog,button=$(buttonId);
+      const opening=state.expanded.toLocaleLowerCase('da-DK')!==name.toLocaleLowerCase('da-DK');
+      try{
+        const old=dialog.querySelector('.group-button[aria-expanded="true"]');
+        if(old){setExpanded(old,false);await animateHeight(document.getElementById(old.getAttribute('aria-controls')),false);}
+        if(dialog!==targetDialog || !dialog?.open)return;
+        state.expanded=opening?name:'';state.paymentLimit=6;
+        if(opening){
+          const panel=document.getElementById(button.getAttribute('aria-controls'));
+          panel.innerHTML=renderPaymentContent(name);wirePayments(panel);setExpanded(button,true);await animateHeight(panel,true);
+        }
+        if(dialog===targetDialog)button?.focus({preventScroll:true});
+      }finally{busy=false;}
     }
     function enterCategory(name){state.category=name;state.limit=8;state.expanded='';$('status').textContent='';render();motion($('results'),[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}]);$('title').focus({preventScroll:true});dialog.scrollTo({top:0,behavior:reduced()?'instant':'smooth'});}
     function openEdit(id){
@@ -3177,7 +3215,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     function open(keep=false){
       if(!data||!currentUser||saveError||loadError)return;
       discard();if(!keep)resetState();refresh();
-      dialog=document.createElement('dialog');dialog.id='bx-dialog';dialog.className='bh-explorer';dialog.setAttribute('aria-labelledby','bx-heading');dialog.innerHTML=`<section class="window" id="bx-detail"><header><div><div class="eyebrow">UDFORSK DIT BUDGET · ${aar}</div><h1 id="bx-heading">Detaljeret oversigt</h1><p class="sub" id="bx-hint">Vælg en kategori for at se, hvad pengene er brugt på.</p></div><button class="soft" id="bx-close">Luk</button></header><div class="controls"><div class="tabs" role="group" aria-label="Vælg type"><button data-kind="udgifter" aria-pressed="true">Udgifter</button><button data-kind="indkomst" aria-pressed="false">Indkomster</button><button data-kind="opsparing" aria-pressed="false">Opsparing & investering</button></div><label class="period">Periode<select id="bx-period"><option value="all">Hele ${aar}</option><optgroup id="bx-period-months" label="En enkelt måned"></optgroup><option value="custom">Vælg periode…</option></select></label></div><div class="custom" id="bx-custom" hidden><label>Fra måned<select id="bx-from"></select></label><label>Til måned<select id="bx-to"></select></label></div><div class="search"><input id="bx-search" type="search" aria-label="Søg efter en postering" placeholder="Søg efter en udgift…"><button id="bx-clear" aria-label="Ryd søgning" hidden>×</button></div><div id="bx-location" class="location"></div><div class="summary" aria-live="polite" role="status"><div><h2 id="bx-title" class="summary-title">Alle udgiftskategorier</h2><div id="bx-count" class="summary-count"></div></div><div id="bx-total" class="summary-amount"></div></div><details class="more-options" id="bx-options"><summary>Sortering og flere tal</summary><div class="options-inner"><label>Sortér efter<select id="bx-sort"><option value="desc">Største beløb</option><option value="asc">Mindste beløb</option><option value="newest">Nyeste først</option><option value="name">Navn A–Å</option></select></label><span>Gns. pr. betaling: <strong id="bx-average"></strong></span></div></details><div id="bx-results"></div><div id="bx-footer" class="footer"></div><div id="bx-status" class="status" role="status"></div><p class="note" id="bx-note">Forbrug er uden opsparing og investering. Tallene følger den valgte periode.</p></section>`;
+      dialog=document.createElement('dialog');dialog.id='bx-dialog';dialog.className='bh-explorer';dialog.setAttribute('aria-labelledby','bx-heading');dialog.innerHTML=`<section class="window" id="bx-detail"><header><div><div class="eyebrow">UDFORSK DIT BUDGET · ${aar}</div><h1 id="bx-heading">Detaljeret oversigt</h1><p class="sub" id="bx-hint">Vælg en kategori for at se, hvad pengene er brugt på.</p></div><button class="soft" id="bx-close">Luk</button></header><div class="controls"><div class="tabs" role="group" aria-label="Vælg type"><button data-kind="udgifter" aria-pressed="true">Udgifter</button><button data-kind="indkomst" aria-pressed="false">Indkomster</button><button data-kind="opsparing" aria-pressed="false">Opsparing & investering</button></div><label class="period">Periode<select id="bx-period"><option value="all">Hele ${aar}</option><optgroup id="bx-period-months" label="En enkelt måned"></optgroup><option value="custom">Vælg periode…</option></select></label></div><div class="custom" id="bx-custom" hidden><label>Fra måned<select id="bx-from"></select></label><label>Til måned<select id="bx-to"></select></label></div><div class="search"><input id="bx-search" type="search" aria-label="Søg efter en postering" placeholder="Søg efter en udgift…"><button id="bx-clear" aria-label="Ryd søgning" hidden>×</button></div><div id="bx-location" class="location"></div><div class="summary" aria-live="polite" role="status"><div><h2 id="bx-title" class="summary-title">Alle udgiftskategorier</h2><div id="bx-count" class="summary-count"></div></div><div id="bx-total" class="summary-amount"></div></div><details class="more-options" id="bx-options"><summary>Sortering og flere tal</summary><div class="bx-options-panel"><div class="options-inner"><label>Sortér efter<select id="bx-sort"><option value="desc">Største beløb</option><option value="asc">Mindste beløb</option><option value="newest">Nyeste først</option><option value="name">Navn A–Å</option></select></label><span>Gns. pr. betaling: <strong id="bx-average"></strong></span></div></div></details><div id="bx-results"></div><div id="bx-footer" class="footer"></div><div id="bx-status" class="status" role="status"></div><p class="note" id="bx-note">Forbrug er uden opsparing og investering. Tallene følger den valgte periode.</p></section>`;
       document.body.appendChild(dialog);init();render();dialog.showModal();motion(dialog,[{opacity:0,transform:'translateY(10px) scale(.99)'},{opacity:1,transform:'translateY(0) scale(1)'}],210);$('search').focus({preventScroll:true});
       dialog.addEventListener('cancel',e=>{e.preventDefault();close();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
       updateSaveStatus();
@@ -3189,8 +3227,8 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       for(const id of ['from','to'])$(id).addEventListener('change',e=>{state[id]=Number(e.target.value);if(state.from>state.to){const other=id==='from'?'to':'from';state[other]=state[id];$(other).value=String(state[id]);}state.limit=8;render();});
       dialog.querySelectorAll('[data-kind]').forEach(b=>b.addEventListener('click',()=>{state.kind=b.dataset.kind;resetView();render();motion($('results'),[{opacity:0},{opacity:1}]);}));
       $('search').addEventListener('input',e=>{state.query=e.target.value;state.limit=8;state.expanded='';$('status').textContent='';render();});$('clear').addEventListener('click',()=>{state.query='';$('search').value='';render();$('search').focus();});$('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});$('close').addEventListener('click',close);
-      const details=$('options'),summary=details.querySelector('summary'),inner=details.querySelector('.options-inner');let toggling=false;
-      summary.addEventListener('click',async e=>{e.preventDefault();if(toggling)return;toggling=true;if(details.open){await motion(inner,[{height:inner.scrollHeight+'px',opacity:1},{height:'0px',opacity:0}]);details.open=false;}else{details.open=true;await motion(inner,[{height:'0px',opacity:0},{height:inner.scrollHeight+'px',opacity:1}]);}toggling=false;});
+      const details=$('options'),summary=details.querySelector('summary'),inner=details.querySelector('.bx-options-panel');let toggling=false;
+      summary.addEventListener('click',async e=>{e.preventDefault();if(toggling)return;toggling=true;try{if(details.open){await animateHeight(inner,false);details.open=false;}else{details.open=true;await animateHeight(inner,true);}}finally{toggling=false;}});
     }
     return {open,close,discard,resume};
   })();
