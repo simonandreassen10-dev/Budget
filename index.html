@@ -1562,7 +1562,7 @@
     const title=action.handling==='rediger'?'Postering ændret':action.handling==='slet_kategori'?'Kategori slettet':'Postering slettet';
     const entry=action.entry || action.forrigeEntry;
     const detail=action.handling==='slet_kategori'?action.kategori:(entry.beskrivelse || entry.kategori)+' · '+kr(entry.beloeb)+' · '+MAANEDER[action.maanedIndex];
-    return `<aside class="bh-undo-notice" aria-label="Fortryd seneste handling"><div role="status" aria-live="polite"><strong>${title}</strong><span>${escapeHtml(detail)}</span><small>${handlingsHistorik.length>1?handlingsHistorik.length+' handlinger kan fortrydes · ':''}Tilgængelig, indtil du skifter år eller genindlæser siden</small></div><button type="button" class="bh-undo-action" onclick="fortryd()" ${saveCount?'disabled':''}>${iconUndo()} Fortryd</button></aside>`;
+    return `<aside class="bh-undo-notice" aria-label="Fortryd seneste handling"><div role="status" aria-live="polite"><strong>${title}</strong><span>${escapeHtml(detail)}</span><small>${handlingsHistorik.length>1?handlingsHistorik.length+' handlinger kan fortrydes · ':''}Tilgængelig, indtil du skifter år eller genindlæser siden</small></div><button type="button" class="bh-undo-action" onclick="fortryd()">${iconUndo()} Fortryd</button></aside>`;
   }
   function sletPost(type, id) {
     if(!currentUser || !data || saveCount || backupBusy || saveError || loadError || !['indkomst','udgifter'].includes(type)) return;
