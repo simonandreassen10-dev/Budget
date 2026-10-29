@@ -909,6 +909,12 @@
   .bh-saldo-result span {font-size:12px;color:var(--text-muted)}
   .bh-saldo-result strong {font-size:20px;overflow-wrap:anywhere}
   #gem-saldo-btn:disabled {opacity:.5;cursor:not-allowed}
+  .bh-undo-notice {position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:1200;display:flex;align-items:center;gap:20px;width:calc(100% - 32px);max-width:580px;padding:16px 18px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:14px;box-shadow:0 8px 32px var(--modal-shadow)}
+  .bh-undo-notice>div {min-width:0;flex:1;display:flex;flex-direction:column;gap:5px}
+  .bh-undo-notice strong {font-size:13px}.bh-undo-notice span {font-size:12px;overflow-wrap:anywhere}.bh-undo-notice small{color:var(--text-muted);font-size:10px;line-height:1.5}
+  .bh-undo-action{display:flex;align-items:center;gap:7px;flex-shrink:0;padding:10px 12px;border:0;border-radius:8px;background:var(--primary-btn);color:var(--primary-btn-text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}.bh-undo-action:disabled{opacity:.5;cursor:wait}
+  body:has(.bh-undo-notice) {padding-bottom:145px}
+  @media(max-width:540px){.bh-undo-notice{bottom:12px;padding:12px;gap:10px}}
 </style>
 </head>
 <body>
@@ -990,7 +996,7 @@
     },
     {
       titel: 'Fortryd',
-      tekst: 'Kommer du til at slette eller ændre noget ved et uheld, dukker der kortvarigt en "Fortryd"-knap op øverst til højre på skærmen.'
+      tekst: 'Efter sletning eller redigering vises en besked nederst med navn, beløb og Fortryd. Du kan fortryde flere handlinger i rækkefølge, også efter månedsskift. Historikken nulstilles ved årsskift, genindlæsning og logout.'
     }
   ];
 
@@ -1459,7 +1465,6 @@
     detaljeVisning = null;
     sammenligningAaben = false;
     markeredePoster = new Set();
-    handlingsHistorik = [];
     render();
   }
   function skiftVisning(v) {
@@ -1472,7 +1477,6 @@
     detaljeVisning = null;
     sammenligningAaben = false;
     markeredePoster = new Set();
-    handlingsHistorik = [];
     render();
   }
   function aabnLukForm(type) {
@@ -1527,7 +1531,7 @@
     if (redigererId) {
       const entry = data[maanedIndex][type].find(p => p.id === redigererId);
       if (entry) {
-        handlingsHistorik.push({ handling: 'rediger', type, id: entry.id, forrigeEntry: { ...entry }, maanedIndex });
+        registrerFortryd({ handling: 'rediger', type, id: entry.id, forrigeEntry: { ...entry }, maanedIndex });
         entry.kategori = kategoriEl.value;
         entry.beskrivelse = (beskrivelseEl.value || '').trim();
         entry.beloeb = beloeb;
@@ -1548,14 +1552,29 @@
     if (fastEl) anvendFasteUdgifter();
     render();
   }
+  function registrerFortryd(action) {
+    handlingsHistorik.push({...action, owner:currentUser?.uid, aar});
+    if(handlingsHistorik.length>50) handlingsHistorik.shift();
+  }
+  function renderFortrydBesked() {
+    const action=handlingsHistorik[handlingsHistorik.length-1];
+    if(!action) return '';
+    const title=action.handling==='rediger'?'Postering ændret':action.handling==='slet_kategori'?'Kategori slettet':'Postering slettet';
+    const entry=action.entry || action.forrigeEntry;
+    const detail=action.handling==='slet_kategori'?action.kategori:(entry.beskrivelse || entry.kategori)+' · '+kr(entry.beloeb)+' · '+MAANEDER[action.maanedIndex];
+    return `<aside class="bh-undo-notice" aria-label="Fortryd seneste handling"><div role="status" aria-live="polite"><strong>${title}</strong><span>${escapeHtml(detail)}</span><small>${handlingsHistorik.length>1?handlingsHistorik.length+' handlinger kan fortrydes · ':''}Tilgængelig, indtil du skifter år eller genindlæser siden</small></div><button type="button" class="bh-undo-action" onclick="fortryd()" ${saveCount?'disabled':''}>${iconUndo()} Fortryd</button></aside>`;
+  }
   function sletPost(type, id) {
+    if(!currentUser || !data || saveCount || backupBusy || saveError || loadError || !['indkomst','udgifter'].includes(type)) return;
     const liste = data[maanedIndex][type];
     const entryIndex = liste.findIndex(p => p.id === id);
     if (entryIndex === -1) return;
     const entry = liste[entryIndex];
-    handlingsHistorik.push({ handling: 'slet', type, entry: { ...entry }, entryIndex, maanedIndex, aar });
+    const exception=type==='udgifter' && entry.fast && entry.seriesId?fastNoegle(entry.seriesId,aar,maanedIndex):null;
+    const tilfoejetUndtagelse=!!exception && !fasteUndtagelser.includes(exception);
+    registrerFortryd({ handling: 'slet', type, entry: { ...entry }, entryIndex, maanedIndex, aar, tilfoejetUndtagelse });
     data[maanedIndex][type] = liste.filter(p => p.id !== id);
-    if (type === 'udgifter' && entry.fast && entry.seriesId) {
+    if (tilfoejetUndtagelse) {
       fasteUndtagelser.push(fastNoegle(entry.seriesId, aar, maanedIndex));
       gemKategorier();
     }
@@ -1563,13 +1582,15 @@
     render();
   }
   function fortryd() {
-    if (handlingsHistorik.length === 0) return;
-    const sidsteHandling = handlingsHistorik.pop();
+    if (!currentUser || !data || saveCount || backupBusy || saveError || loadError || indlaeserData || !handlingsHistorik.length) return;
+    const pending=handlingsHistorik[handlingsHistorik.length-1];
+    if(pending.owner!==currentUser.uid || pending.aar!==aar) { handlingsHistorik=[];render();return; }
+    const sidsteHandling=handlingsHistorik.pop();
     if (sidsteHandling.handling === 'slet_kategori') {
       const { type, kategori, index } = sidsteHandling;
       const liste = brugerKategorier[type];
       const indsaetIndex = Math.min(index, liste.length);
-      liste.splice(indsaetIndex, 0, kategori);
+      if(!liste.includes(kategori)) liste.splice(indsaetIndex, 0, kategori);
       gemKategorier();
       render();
       return;
@@ -1578,8 +1599,8 @@
     if (handling === 'slet') {
       const liste = data[m][type];
       const indsaetIndex = Math.min(sidsteHandling.entryIndex, liste.length);
-      liste.splice(indsaetIndex, 0, sidsteHandling.entry);
-      if (type === 'udgifter' && sidsteHandling.entry.fast && sidsteHandling.entry.seriesId) {
+      if(!liste.some(p=>p.id===sidsteHandling.entry.id)) liste.splice(indsaetIndex, 0, {...sidsteHandling.entry});
+      if (sidsteHandling.tilfoejetUndtagelse) {
         const noegle = fastNoegle(sidsteHandling.entry.seriesId, sidsteHandling.aar || aar, m);
         fasteUndtagelser = fasteUndtagelser.filter(n => n !== noegle);
         gemKategorier();
@@ -1720,8 +1741,9 @@
     const liste = brugerKategorier[type];
     const kategori = liste[idx];
     if (kategori === undefined) return;
+    if(saveCount || backupBusy || saveError || loadError || !currentUser) return;
     liste.splice(idx, 1);
-    handlingsHistorik.push({ handling: 'slet_kategori', type, kategori, index: idx });
+    registrerFortryd({ handling: 'slet_kategori', type, kategori, index: idx });
     sletKategoriIndeks = null;
     gemKategorier();
     render();
@@ -2151,7 +2173,7 @@
             <div class="bh-kategori-advarsel">${iconWarning()} Slet <strong>${escapeHtml(kategori)}</strong>? Eksisterende posteringer beholder navnet, men den kan ikke vælges fremover.</div>
             <div class="bh-kategori-row-actions">
               <button type="button" class="bh-mini-btn bh-mini-btn-danger" onclick="bekraeftSletKategori(${idx})">Ja, slet kategorien</button>
-              <button type="button" class="bh-mini-btn" onclick="annullerSletKategori()">Fortryd</button>
+              <button type="button" class="bh-mini-btn" onclick="annullerSletKategori()">Annuller</button>
             </div>
           </div>
         `;
@@ -3067,12 +3089,7 @@
     const kontosaldoVaerdi = startEffektiv !== null ? startEffektiv + sumIndkomstAlt - sumUdgifterAlt : null;
 
     document.getElementById('app').innerHTML = `
-      ${handlingsHistorik.length > 0 ? (() => {
-        const sidsteHandling = handlingsHistorik[handlingsHistorik.length - 1];
-        const label = sidsteHandling.handling === 'rediger' ? 'Fortryd ændring' : sidsteHandling.handling === 'slet_kategori' ? 'Fortryd sletning af kategori' : 'Fortryd sletning';
-        const taeller = handlingsHistorik.length > 1 ? ` (${handlingsHistorik.length})` : '';
-        return `<button class="bh-undo-btn" onclick="fortryd()">${iconUndo()} ${label}${taeller}</button>`;
-      })() : ''}
+      ${renderFortrydBesked()}
       ${toastBesked ? `<div class="bh-toast ${toastType === 'error' ? 'error' : ''}">${toastType === 'error' ? `<span class="bh-toast-icon">${iconWarning()}</span>` : ''}${escapeHtml(toastBesked)}</div>` : ''}
       <div class="bh-root">
         <div class="bh-topbar">
