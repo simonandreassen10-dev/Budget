@@ -948,14 +948,14 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     --bg:#f0f1f5; --card:#fafafd; --border:#d9deeb; --text:#222a40;
     --text-muted:#536078; --text-faint:#5e6b81; --navy:#405583; --hover:#e9edf6;
     --entry-bg:#f1f3f9; --primary-btn:#3a4a73; --primary-btn-hover:#2f3d62;
-    --green:#3f5a89; --red:#9d4b43; --donut-empty:#e6eaf3;
-    --budget-income:#617ba8; --budget-expense:#c3786f; --budget-save:#8d7da5;
+    --green:#237554; --red:#9d4b43; --donut-empty:#e6eaf3;
+    --budget-income:#429975; --budget-expense:#c3786f; --budget-save:#8d7da5;
   }
   body.bh-dark {
     --bg:#151923; --card:#1e2432; --border:#363e52; --text:#edf0f8;
     --text-muted:#bdc7dc; --text-faint:#a5b0c9; --navy:#a2b6ee; --hover:#293147;
-    --entry-bg:#242c3e; --green:#a2bdf2; --red:#f2a69c;
-    --budget-income:#8aa6d8; --budget-expense:#d99187; --budget-save:#ac9bc5;
+    --entry-bg:#242c3e; --green:#63cea1; --red:#f2a69c;
+    --budget-income:#63bf98; --budget-expense:#d99187; --budget-save:#ac9bc5;
   }
   body:has(.budget-layout) { padding:0; }
   .budget-layout { display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100dvh; }
@@ -1083,6 +1083,29 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     .budget-posts { padding:13px 10px 7px; }.budget-post { gap:6px; }.budget-post-actions { gap:1px; }.budget-post-actions button { width:27px; }.budget-post-search { margin-left:0;flex:1; }.budget-post-icon { width:23px;height:23px; }
     .budget-nav button,.budget-settings { min-height:35px;padding:6px 7px;font-size:11px;gap:5px; }
   }
+
+
+  .bh-tema-valg { margin-top:12px; }
+  .bh-tema-knap { text-align:left;align-items:stretch;padding:10px;gap:9px;min-width:0; }
+  .budget-theme-sample { display:grid;grid-template-columns:23% 1fr;gap:6px;padding:6px;height:78px;border-radius:8px;background:#f0f1f5;border:1px solid #d9deeb;--sample-card:#fafafd;--sample-ink:#3a4a73; }
+  .budget-theme-sample.moerk { background:#151923;border-color:#363e52;--sample-card:#252e41;--sample-ink:#8ea4e6; }
+  .budget-theme-sample i,.budget-theme-sample em { border-radius:4px;background:var(--sample-card); }
+  .budget-theme-sample span { display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1.5fr 1fr;gap:4px; }
+  .budget-theme-sample b { grid-column:span 2;border-radius:4px;background:var(--sample-ink); }
+  .budget-year-action { min-height:40px;border-radius:10px;padding-inline:11px;white-space:nowrap; }
+  .budget-year-metrics { margin-top:0; }
+  .budget-year-chart { margin-bottom:12px; }
+  .budget-year-chart .bh-chart { margin-top:12px; }
+  .budget-tone-income > strong,.budget-tone-income .budget-metric-label span,.budget-tone-income .budget-post-icon { color:var(--green); }
+  .budget-date .budget-date-toggle { justify-content:space-between;gap:12px;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--bg); }
+  .budget-date-toggle strong,.budget-date-toggle small { display:block; }
+  .budget-date-toggle strong { color:var(--text); }
+  .budget-date-toggle small { margin-top:3px;font-size:11px;line-height:1.4; }
+  .budget-date #form-med-dato { appearance:none;position:relative;width:36px;height:20px;padding:0;border:1px solid var(--border);border-radius:20px;background:var(--donut-empty);flex:none;cursor:pointer; }
+  .budget-date #form-med-dato:checked { background:var(--primary-btn); }
+  .budget-date #form-med-dato::before { content:"";display:block;width:14px;height:14px;position:absolute;top:2px;left:2px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px #0003;transition:transform .16s; }
+  .budget-date #form-med-dato:checked::before { transform:translateX(16px); }
+  .budget-date #form-med-dato:focus-visible { outline:2px solid var(--navy);outline-offset:2px; }
 
 </style>
 </head>
@@ -2397,17 +2420,15 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     `;
   }
 
+
   function renderUdseendeSektion() {
     return `
-      <div class="bh-tema-valg">
-        <button type="button" class="bh-tema-knap ${!darkMode ? 'active' : ''}" onclick="vaelgTema(false)">
-          <span class="bh-tema-knap-ikon">☀️</span>
-          <span>Lyst tema</span>
-        </button>
-        <button type="button" class="bh-tema-knap ${darkMode ? 'active' : ''}" onclick="vaelgTema(true)">
-          <span class="bh-tema-knap-ikon">🌙</span>
-          <span>Mørkt tema</span>
-        </button>
+      <p class="budget-modal-note">Vælg det tema, der er mest behageligt for dig.</p>
+      <div class="bh-tema-valg" role="group" aria-label="Vælg tema">
+        ${[false,true].map(moerk=>`<button type="button" class="bh-tema-knap ${moerk===darkMode?'active':''}" aria-pressed="${moerk===darkMode}" onclick="vaelgTema(${moerk})">
+          <span class="budget-theme-sample ${moerk?'moerk':''}" aria-hidden="true"><i></i><span><b></b><em></em><em></em></span></span>
+          <strong>${moerk?'Mørkt tema':'Lyst tema'}</strong>
+        </button>`).join('')}
       </div>
     `;
   }
@@ -2604,7 +2625,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
       .map(g => ({ ...g, variationer: Array.from(g.variationer) }))
       .sort((a, b) => b.total - a.total);
   }
-  function aabnDetaljePanel() { detailExplorer.open(); }
+  function aabnDetaljePanel(month, trigger) { detailExplorer.open(false, {month, trigger}); }
   function lukDetaljePanel() { detailExplorer.close(); }
   function visDetaljeKategori(index) {
     const kategorier = beregnKategoriTotaler();
@@ -2856,7 +2877,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
 
   function renderSammenligningChart(perMaaned) {
     const series = [{key:'ind',label:'Indkomst',color:'var(--green)'},{key:'udg',label:'Forbrug',color:'var(--red)'}];
-    if (perMaaned.some(m => (m.opsparing || 0) !== 0)) series.push({key:'opsparing',label:'Opsparing & investering',color:'var(--navy)'});
+    series.push({key:'opsparing',label:'Opsparing & investering',color:'var(--budget-save)'});
     const values=perMaaned.flatMap(m=>series.map(s=>m[s.key] || 0));
     const hasData=values.some(v=>v!==0);
     const magnitude=Math.max(1,...values.map(Math.abs));
@@ -2940,6 +2961,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     });
     return [...groups.values()].sort((a,b) => b.beloeb-a.beloeb || a.navn.localeCompare(b.navn,'da'));
   }
+  window.aabnKategoriDetaljer = trigger => detailExplorer.open(false,{kind:trigger.dataset.kind,trigger});
   function renderKategoriDiagram(type, requestedPage = 0) {
     const expense = type === 'udgifter';
     const savings = type === 'opsparing';
@@ -2954,7 +2976,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     const title = savings ? 'Opsparing & investering' : expense ? 'Udgifter' : 'Indkomster';
     const color = savings ? 'var(--navy)' : expense ? 'var(--red)' : 'var(--green)';
     return `<section class="bh-panel bh-category-card" id="bh-category-${type}" style="--category-color:${color}">
-      <div class="bh-category-heading"><h3>${title}</h3><span>${aar}</span></div>
+      <div class="bh-category-heading"><h3>${title}</h3><button type="button" class="bh-add-btn bh-tooltip bh-tooltip-left" data-kind="${type}" data-tooltip="Detaljeret oversigt" aria-label="Se detaljer for ${title}" aria-haspopup="dialog" onclick="aabnKategoriDetaljer(this)">${iconChevron('right')}</button></div>
       <div class="bh-category-total">${kr(total)}</div>
       <div class="bh-category-caption">${savings ? 'Årets indbetalinger til opsparing og investering' : expense ? 'Årets forbrug fordelt på kategorier' : 'Her kommer årets indkomst fra'}</div>
       <div class="bh-category-list">${groups.length ? visibleGroups.map((g,i)=>{
@@ -3035,6 +3057,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     const cards=[
       ['Årets indkomst',kr(totals.indAlt),'Overførsler fra opsparing er ikke medregnet'],
       ['Årets forbrug',kr(totals.udgAlt),'Uden opsparing og investering'],
+      ['Indkomst minus forbrug',visBeloeb(totals.saldoAlt),'Forskellen mellem årets indkomst og forbrug'],
       ['Gennemsnitligt forbrug',kr(totals.udgAlt/months.length),'Pr. måned med posteringer · '+months.length+' af 12 måneder'],
       ['Opsparing & investering',kr(totals.opsparingAlt),'Registrerede indbetalinger i '+aar],
       ['Dyreste måned',expensive?MAANEDER[expensive.i]:'Ingen udgifter',expensive?kr(beregnMaaned(expensive.m).udg)+' i forbrug':'Registrér en udgift for at se måneden'],
@@ -3059,7 +3082,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     if(tab==='changes' && sammenligningType==='maaneder'){indsigtBefore=sammenligningA;indsigtAfter=sammenligningB;}
     indsigtFane=tab;opdaterIndsigter();document.getElementById('insight-tab-'+tab)?.focus({preventScroll:true});
   };
-  window.aabnIndsigter=function(tab='compare') {
+  window.aabnIndsigter=function(tab='compare', trigger=document.activeElement) {
     if(!data) return;
     document.getElementById('bh-insight-dialog')?.remove();
     const now=new Date(), limit=aar===now.getFullYear()?now.getMonth():11;
@@ -3067,7 +3090,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     indsigtAfter=Math.max(1,indices.length?indices[indices.length-1]:limit);indsigtBefore=indsigtAfter-1;
     sammenligningType='maaneder';sammenligningA=indsigtBefore;sammenligningB=indsigtAfter;indsigtFane=tab;
     const dialog=document.createElement('dialog');dialog.id='bh-insight-dialog';dialog.className='bh-insight-dialog';dialog.setAttribute('aria-labelledby','bh-insight-title');dialog.innerHTML=renderIndsigter();
-    dialog.addEventListener('close',()=>{dialog.remove();document.getElementById('bh-insight-open')?.focus({preventScroll:true});});
+    dialog.addEventListener('close',()=>{dialog.remove();(trigger?.isConnected?trigger:document.getElementById('bh-insight-open'))?.focus({preventScroll:true});});
     document.body.appendChild(dialog);dialog.showModal();
   };
   window.aabnAendringer=()=>window.aabnIndsigter('changes');
@@ -3089,39 +3112,17 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
       </div>
     </nav>`;
   }
+
   function renderYearOverview() {
-    const { perMaaned, indAlt, udgAlt, opsparingAlt, opsparingKunAlt, investeretKunAlt, saldoAlt, alleUdgifter, alleOpsparingsPoster } = beregnAar();
+    const { perMaaned, indAlt, udgAlt, opsparingAlt } = beregnAar();
     return `
-      <div class="bh-summary-oversigt">
-        <div class="bh-card">
-          <div class="bh-card-label">Indkomst i ${aar}</div>
-          <div class="bh-card-value pos">${kr(indAlt)}</div>
-          <div class="bh-card-sub">Hele året</div>
-        </div>
-        <div class="bh-card">
-          <div class="bh-card-label">Udgifter i ${aar}</div>
-          <div class="bh-card-value neg">${kr(udgAlt)}</div>
-          <div class="bh-card-sub">Hele året</div>
-        </div>
-        <div class="bh-card">
-          <div class="bh-card-label">Saldo i ${aar}</div>
-          <div class="bh-card-value ${saldoAlt >= 0 ? 'pos' : 'neg'}">${kr(saldoAlt)}</div>
-          <div class="bh-card-sub">Indkomst − udgifter</div>
-        </div>
-        <div class="bh-card">
-          <div class="bh-card-label">Opsparing &amp; investering</div>
-          <div class="bh-card-value" style="color:var(--navy);">${kr(opsparingAlt)}</div>
-          <div class="bh-card-sub">Tæller ikke som forbrug</div>
-        </div>
-      </div>
-
+      ${renderMaanedTal({ind:indAlt,udg:udgAlt,opsparing:opsparingAlt},true)}
       ${renderOversigtVaerktoejer()}
-
-      <div class="bh-panel" style="margin-bottom:12px;">
-        <div class="bh-panel-title">${alleOpsparingsPoster.length > 0 ? 'Indkomst, forbrug &amp; opsparing pr. måned' : 'Indkomster kontra udgifter pr. måned'}</div>
+      <section class="bh-panel budget-year-chart" aria-labelledby="budget-year-chart-title">
+        <h2 id="budget-year-chart-title">Årets udvikling</h2>
+        <p class="budget-modal-note">Vælg en måned i diagrammet for at åbne den.</p>
         ${renderSammenligningChart(perMaaned)}
-      </div>
-
+      </section>
       ${renderSamletFordeling()}
     `;
   }
@@ -3383,11 +3384,19 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       if(saved.owner!==currentUser?.uid||saved.year!==aar||saveError||loadError)return;
       maanedIndex=saved.month;visning=saved.view;renderApp();updateSaveStatus();open(true);
     }
-    async function close(){if(!dialog)return;const target=dialog;await motion(target,[{opacity:1,transform:'translateY(0) scale(1)'},{opacity:0,transform:'translateY(8px) scale(.99)'}],140);target.close();target.remove();if(dialog===target)dialog=null;document.getElementById('bh-detail-open')?.focus({preventScroll:true});}
+    let explorerTrigger;
+    async function close(){if(!dialog)return;const target=dialog;await motion(target,[{opacity:1,transform:'translateY(0) scale(1)'},{opacity:0,transform:'translateY(8px) scale(.99)'}],140);target.close();target.remove();if(dialog===target)dialog=null;(explorerTrigger?.isConnected?explorerTrigger:document.getElementById('bh-detail-open'))?.focus({preventScroll:true});}
     function discard(){returnTo=null;busy=false;if(dialog){dialog.remove();dialog=null;}}
-    function open(keep=false){
+    function open(keep=false, {month, kind, trigger}={}){
       if(!data||!currentUser||saveError||loadError)return;
-      discard();if(!keep)resetState();refresh();
+      discard();
+      if(!keep){
+        resetState();
+        explorerTrigger=trigger;
+        if(Number.isInteger(month) && month>=0 && month<12) state.from=state.to=month;
+        if(['udgifter','indkomst','opsparing'].includes(kind)) state.kind=kind;
+      }
+      refresh();
       dialog=document.createElement('dialog');dialog.id='bx-dialog';dialog.className='bh-explorer';dialog.setAttribute('aria-labelledby','bx-heading');dialog.innerHTML=`<section class="window" id="bx-detail"><header><div><div class="eyebrow">UDFORSK DIT BUDGET · ${aar}</div><h1 id="bx-heading">Detaljeret oversigt</h1><p class="sub" id="bx-hint">Vælg en kategori for at se, hvad pengene er brugt på.</p></div><button class="soft" id="bx-close">Luk</button></header><div class="controls"><div class="tabs" role="group" aria-label="Vælg type"><button data-kind="udgifter" aria-pressed="true">Udgifter</button><button data-kind="indkomst" aria-pressed="false">Indkomster</button><button data-kind="opsparing" aria-pressed="false">Opsparing & investering</button></div><label class="period">Periode<select id="bx-period"><option value="all">Hele ${aar}</option><optgroup id="bx-period-months" label="En enkelt måned"></optgroup><option value="custom">Vælg periode…</option></select></label></div><div class="custom" id="bx-custom" hidden><label>Fra måned<select id="bx-from"></select></label><label>Til måned<select id="bx-to"></select></label></div><div class="search"><input id="bx-search" type="search" aria-label="Søg efter en postering" placeholder="Søg efter en udgift…"><button id="bx-clear" aria-label="Ryd søgning" hidden>×</button></div><div id="bx-location" class="location"></div><div class="summary" aria-live="polite" role="status"><div><h2 id="bx-title" class="summary-title">Alle udgiftskategorier</h2><div id="bx-count" class="summary-count"></div></div><div id="bx-total" class="summary-amount"></div></div><details class="more-options" id="bx-options"><summary>Sortering og flere tal</summary><div class="bx-options-panel"><div class="options-inner"><label>Sortér efter<select id="bx-sort"><option value="desc">Største beløb</option><option value="asc">Mindste beløb</option><option value="newest">Nyeste først</option><option value="name">Navn A–Å</option></select></label><span>Gns. pr. betaling: <strong id="bx-average"></strong></span></div></div></details><div id="bx-results"></div><div id="bx-footer" class="footer"></div><div id="bx-status" class="status" role="status"></div><p class="note" id="bx-note">Forbrug er uden opsparing og investering. Tallene følger den valgte periode.</p></section>`;
       document.body.appendChild(dialog);init();render();dialog.showModal();motion(dialog,[{opacity:0,transform:'translateY(10px) scale(.99)'},{opacity:1,transform:'translateY(0) scale(1)'}],210);$('search').focus({preventScroll:true});
       dialog.addEventListener('cancel',e=>{e.preventDefault();close();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
@@ -3408,14 +3417,14 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
 
 
   const postFiltre = [['alle','Alle'],['udgifter','Udgifter'],['indkomst','Indkomster'],['opsparing','Opsparing']];
-  let postFilter = 'alle', postSoegning = '', postGraense = 4;
+  let postFilter = 'alle', postSoegning = '', postGraense = 4, allePosterAabne = false, postSortering = 'nyeste';
   const beloebVisning = new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 });
   const visBeloeb = value => beloebVisning.format(value) + ' kr.';
   const kontoNetto = value => (value < 0 ? '−' : '+') + visBeloeb(Math.abs(value));
   const wallet = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M19 7V5a2 2 0 0 0-2-2L5 5a3 3 0 0 0-2 3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H6m15 4h-5a2.5 2.5 0 0 0 0 5h5"/><path d="M16 13.5h.1"/></svg>';
   const homeIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 10 9-7 9 7v10h-6v-7H9v7H3z"/></svg>';
 
-  function nulstilPostListe() { postFilter = 'alle'; postSoegning = ''; postGraense = 4; }
+  function nulstilPostListe() { postFilter = 'alle'; postSoegning = ''; postGraense = 4; allePosterAabne = false; postSortering = 'nyeste'; }
 
   function flytMaaned(delta) {
     const next = maanedIndex + delta;
@@ -3443,7 +3452,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       <p>${erOversigt ? 'Se, hvordan indkomst, forbrug og opsparing har udviklet sig.' : 'Månedens saldo, forbrug og opsparing samlet ét sted.'}</p></div>
       <div class="budget-periods">
         <label class="budget-period"><span>År</span><select class="bh-year-select" aria-label="Vælg år" onchange="vaelgAar(this.value)">${aarValgmuligheder()}</select></label>
-        ${erOversigt ? '' : `<div class="budget-period budget-month">
+        ${erOversigt ? `<button type="button" class="bh-add-btn budget-year-action" onclick="aabnIndsigter('year',this)" aria-haspopup="dialog">${iconTrendUp()} Året i tal</button><button type="button" class="bh-add-btn budget-year-action" onclick="aabnIndsigter('compare',this)" aria-haspopup="dialog">${iconSammenlign()} Sammenlign</button>` : `<div class="budget-period budget-month">
           <button class="bh-year-btn bh-tooltip" data-tooltip="Forrige måned" onclick="flytMaaned(-1)" aria-label="Forrige måned" ${aar===1000 && maanedIndex===0 ? 'disabled' : ''}>${iconChevron('left')}</button>
           <select aria-label="Vælg måned" onchange="skiftMaaned(Number(this.value))">${MAANEDER.map((m,i)=>'<option value="'+i+'"'+(i===maanedIndex?' selected':'')+'>'+m+'</option>').join('')}</select>
           <button class="bh-year-btn bh-tooltip bh-tooltip-left" data-tooltip="Næste måned" onclick="flytMaaned(1)" aria-label="Næste måned" ${aar===9999 && maanedIndex===11 ? 'disabled' : ''}>${iconChevron('right')}</button>
@@ -3459,8 +3468,8 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       const x=i*13;
       return `<path d="M ${110+x} 260 C ${7+x} 195, ${72+x} 143, ${154+x} 152 S ${286+x} 190, ${263+x} 77 S ${361+x} 22, ${432+x} 82"/>`;
     }).join('');
-    const investering = maaned.udgifter.filter(p => p.kategori === 'Investering').reduce((sum,p)=>sum+p.beloeb,0);
-    const segments = [['Forbrug', totals.udg,'var(--budget-expense)'],['Opsparing',totals.opsparing-investering,'var(--budget-income)'],['Investering',investering,'var(--budget-save)']];
+    const investering = maaned.udgifter.filter(p => p.kategori.toLocaleLowerCase('da-DK') === 'investering').reduce((sum,p)=>sum+p.beloeb,0);
+    const segments = [['Forbrug', totals.udg,'var(--budget-expense)'],['Opsparing',totals.opsparing-investering,'var(--navy)'],['Investering',investering,'var(--budget-save)']];
     let progress = 0;
     const stops = segments.filter(([,value])=>value>0).map(([,value,color])=>{
       const from = progress;
@@ -3483,13 +3492,13 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     </div>`;
   }
 
-  function renderMaanedTal(totals) {
+  function renderMaanedTal(totals, heltAar = false) {
     const metrics = [
-      ['Indkomst',totals.ind,totals.overfoersel ? visBeloeb(totals.overfoersel)+' overført fra opsparing' : 'Penge ind denne måned',iconTrendDown(),'income'],
+      ['Indkomst',totals.ind,heltAar ? 'Samlet for året' : totals.overfoersel ? visBeloeb(totals.overfoersel)+' overført fra opsparing' : 'Penge ind denne måned',iconTrendDown(),'income'],
       ['Forbrug',totals.udg,'Uden opsparing og investering',iconTrendUp(),'expense'],
-      ['Opsparing & investering',totals.opsparing,'Indbetalt denne måned',iconPiggyBank(),'save']
+      ['Opsparing & investering',totals.opsparing,heltAar ? 'Årets indbetalinger' : 'Indbetalt denne måned',iconPiggyBank(),'save']
     ];
-    return `<div class="budget-metrics">${metrics.map(([label,value,description,icon,tone])=>`<section class="bh-card budget-metric budget-tone-${tone}"><div class="budget-metric-label"><span>${icon}</span>${label}</div><strong>${visBeloeb(value)}</strong><small>${description}</small></section>`).join('')}</div>`;
+    return `<div class="budget-metrics${heltAar?' budget-year-metrics':''}">${metrics.map(([label,value,description,icon,tone])=>`<section class="bh-card budget-metric budget-tone-${tone}"><div class="budget-metric-label"><span>${icon}</span>${label}</div><strong>${visBeloeb(value)}</strong><small>${description}</small></section>`).join('')}</div>`;
   }
 
   function renderPostRows() {
@@ -3507,10 +3516,17 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       const byPost = new Map(rows.map(row=>[row.post,row]));
       rows.splice(0, rows.length, ...order.map(post=>byPost.get(post)));
     } else {
-      rows.sort((a,b)=>String(b.post.dato || '').localeCompare(String(a.post.dato || '')) || b.index-a.index);
+      const newest = (a,b)=>String(b.post.dato || '').localeCompare(String(a.post.dato || '')) || b.index-a.index;
+      const order = {
+        nyeste: newest,
+        hoejeste: (a,b)=>b.post.beloeb-a.post.beloeb || newest(a,b),
+        laveste: (a,b)=>a.post.beloeb-b.post.beloeb || newest(a,b),
+        navn: (a,b)=>(a.post.beskrivelse||a.post.kategori).localeCompare(b.post.beskrivelse||b.post.kategori,'da') || newest(a,b)
+      };
+      rows.sort(order[postSortering]);
     }
     return `${rows.length ? rows.slice(0,postGraense).map(renderPostRow).join('') : '<div class="bh-empty">'+(search ? 'Ingen posteringer matcher din søgning.' : 'Ingen posteringer at vise.')+'</div>'}
-      <div class="budget-list-foot"><span>${Math.min(rows.length,postGraense)} af ${rows.length} posteringer</span>
+      <div class="budget-list-foot"><span role="status">${Math.min(rows.length,postGraense)} af ${rows.length} posteringer</span>
       ${rows.length>postGraense ? '<button class="bh-mini-btn" onclick="udvidPostListe(false)">'+iconPlus()+' Vis flere</button>' : ''}</div>`;
   }
 
@@ -3530,13 +3546,19 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     </div>`;
   }
 
+  function renderPostSortering() {
+    const options = [['nyeste','Nyeste først'],['hoejeste','Højeste beløb'],['laveste','Laveste beløb'],['navn','Navn A–Å']];
+    return '<div class="bh-sortering"><label for="budget-post-sort">Sortér efter</label><select id="budget-post-sort" onchange="sorterMaanedsPoster(this.value)">'+
+      options.map(([key,label])=>'<option value="'+key+'"'+(key===postSortering?' selected':'')+'>'+label+'</option>').join('')+'</select></div>';
+  }
+
   function renderMaanedPoster(month, totals) {
     const marked = ['indkomst','udgifter'].filter(type=>beregnMarkeretAntal(type)>0);
     return `<section class="bh-panel budget-posts">
-      <div class="budget-post-head"><div><h2>${postGraense===4?'Seneste posteringer':'Månedens posteringer'}</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
-        ${postGraense===Infinity ? '' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}</div>
+      <div class="budget-post-head"><div><h2>${allePosterAabne?'Månedens posteringer':'Seneste posteringer'}</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
+        ${allePosterAabne ? '<button type="button" class="bh-mini-btn" onclick="aabnDetaljePanel(Number(this.dataset.month),this)" data-month="'+maanedIndex+'">'+iconSearch()+' Detaljeret oversigt</button>' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}</div>
       <div class="budget-post-filters"><div class="budget-filter-buttons" role="group" aria-label="Filtrér posteringer">${postFiltre.map(([key,label])=>`<button type="button" aria-pressed="${key===postFilter}" onclick="vaelgPostFilter('${key}')">${label}</button>`).join('')}</div>
-        ${postFilter==='udgifter' || postFilter==='opsparing' ? renderSortering() : ''}
+        ${postFilter==='udgifter' || postFilter==='opsparing' ? renderSortering() : allePosterAabne ? renderPostSortering() : ''}
         <label class="budget-post-search">${iconSearch()}<input type="search" aria-label="Søg postering" placeholder="Søg postering…" value="${budgetAttr(postSoegning)}" oninput="soegMaanedsPoster(this.value)"></label></div>
       ${marked.map(type=>`<div class="bh-markering-bar"><span>${beregnMarkeretAntal(type)} markeret · ${type==='indkomst'?'Indkomst':'Udgifter'}</span><span class="bh-markering-total">${visBeloeb(beregnMarkeretTotal(type))}</span><button onclick="ryddMarkering()">Ryd</button></div>`).join('')}
       <div id="budget-post-rows">${renderPostRows()}</div>
@@ -3642,13 +3664,18 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     const now = new Date();
     const def = datoForMaaned(aar,maanedIndex,now.getFullYear()===aar && now.getMonth()===maanedIndex ? now.getDate() : 1);
     const hasDate = entry ? !!entry.dato : datoPraeference();
-    return `<div class="budget-date"><label><input type="checkbox" id="form-med-dato" ${hasDate?'checked':''} onchange="skiftPostDato(this.checked)"> Tilføj dato</label>
+    return `<div class="budget-date"><label class="budget-date-toggle"><span><strong>Brug dato</strong><small id="budget-date-hint">${postDatoHint(hasDate)}</small></span><input type="checkbox" role="switch" id="form-med-dato" aria-controls="form-dato" aria-describedby="budget-date-hint" ${hasDate?'checked':''} onchange="skiftPostDato(this.checked)"></label>
       <input type="date" id="form-dato" aria-label="Dato for postering" value="${budgetAttr(entry?.dato || def)}" min="${datoForMaaned(aar,maanedIndex,1)}" max="${datoForMaaned(aar,maanedIndex,31)}" ${hasDate?'':'hidden disabled'}></div>`;
+  }
+
+  function postDatoHint(enabled) {
+    return enabled ? 'Vælg en bestemt dag.' : 'Gemmes i '+MAANEDER[maanedIndex].toLocaleLowerCase('da-DK')+' '+aar+' uden en bestemt dag.';
   }
 
   function skiftPostDato(checked) {
     const field = document.getElementById('form-dato');
     field.hidden = field.disabled = !checked;
+    document.getElementById('budget-date-hint').textContent=postDatoHint(checked);
     if (!redigererId) {
       try { localStorage.setItem('budget-dato:'+currentUser.uid,checked?'til':'fra'); } catch (_) { /* Valget gælder denne post. */ }
     }
@@ -3663,7 +3690,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
   window.lukNyPost = () => { nyPostAaben=false; render(); document.querySelector('.budget-new')?.focus(); };
   window.flytMaaned = flytMaaned;
   window.vaelgPostFilter = value => {
-    postFilter=value; postGraense=4; render();
+    postFilter=value; render();
     document.querySelector('.budget-filter-buttons [aria-pressed="true"]')?.focus();
   };
   window.soegMaanedsPoster = value => {
@@ -3671,10 +3698,20 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     document.getElementById('budget-post-rows').innerHTML=renderPostRows();
   };
   window.udvidPostListe = all => {
-    postGraense=all?Infinity:postGraense+12;
+    if (all) {
+      allePosterAabne = true;
+      postGraense = Math.max(20,postGraense);
+      render();
+      document.querySelector('.budget-post-head button')?.focus({preventScroll:true});
+    } else {
+      postGraense += 12;
+      document.getElementById('budget-post-rows').innerHTML=renderPostRows();
+    }
+  };
+  window.sorterMaanedsPoster = value => {
+    if (!['nyeste','hoejeste','laveste','navn'].includes(value)) return;
+    postSortering=value;
     document.getElementById('budget-post-rows').innerHTML=renderPostRows();
-    const button = document.querySelector('.budget-post-head button');
-    if (all && button) button.hidden=true;
   };
   window.skiftPostDato = skiftPostDato;
   window.visBudgetOpdatering = visBudgetOpdatering;
