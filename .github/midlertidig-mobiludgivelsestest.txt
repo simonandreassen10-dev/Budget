@@ -1,0 +1,3 @@
+Midlertidig test af GitHub-forbindelsen og mobiludgivelse for Budget.
+TEST - skal ikke merges.
+Denne fil findes kun på testgrenen. Ingen budgetdata eller appfiler er ændret.
