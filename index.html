@@ -993,8 +993,8 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   .budget-hero-label svg { width:20px;height:20px; }
   .budget-balance { display:block;font-size:clamp(29px,4.25vw,52px);line-height:1.08;letter-spacing:-.06em;margin:13px 0 7px;overflow-wrap:anywhere; }
   .budget-hero p { margin:0;font-size:11px;color:#e1e7f8; }
-  .budget-hero-foot { display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:18px;font-size:11px; }
-  .budget-hero-foot span,.budget-hero-foot button { padding:6px 9px;border-radius:8px;background:#e8edff20; }
+  .budget-hero-foot { display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:18px;font-size:11px; }
+  .budget-hero-foot button { padding:6px 9px;border-radius:8px;background:#e8edff20; }
   .budget-hero-foot button { border:1px solid #d7e0ff50;font-size:11px;cursor:pointer; }
   .budget-hero-foot button:hover { background:#e8edff38; }
   .budget-outgoing { padding:19px 20px; }
@@ -1028,7 +1028,6 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   .budget-post-search svg { position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text-muted); }
   .budget-post-search input { width:100%;min-height:35px;padding:5px 8px 5px 30px;border:1px solid var(--border);border-radius:9px;background:var(--card);color:var(--text); }
   .budget-post { display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;border-top:1px solid var(--border);padding:10px 0;min-height:57px; }
-  .budget-post.markeret { background:var(--hover);box-shadow:inset 2px 0 var(--navy); }
   .budget-post-name { display:flex;gap:9px;align-items:center;min-width:0;font-size:13px;overflow-wrap:anywhere; }
   .budget-post-name small { display:block;margin-top:3px; }
   .budget-post-amount { font-size:12px;text-align:right;font-variant-numeric:tabular-nums; }
@@ -1039,10 +1038,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   .budget-list-foot { min-height:40px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted); }
   .budget-post-head button,.budget-list-foot button { display:inline-flex;align-items:center;gap:5px; }
   .budget-post-head button[hidden] { display:none; }
-  .budget-month-detail { margin-top:14px; }
-  .budget-month-detail summary,.budget-previous summary { cursor:pointer;font-size:13px;font-weight:650; }
-  .budget-month-detail summary span { margin-left:9px;font-size:11px;color:var(--text-muted);font-weight:500; }
-  .budget-month-detail[open] summary { margin-bottom:12px; }
+  .budget-previous summary { cursor:pointer;font-size:13px;font-weight:650; }
   .budget-date { display:grid;gap:8px;margin:9px 0; }
   .budget-date label { display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted); }
   .budget-date #form-med-dato { width:auto;margin:0;accent-color:var(--navy); }
@@ -1106,6 +1102,35 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   .budget-date #form-med-dato::before { content:"";display:block;width:14px;height:14px;position:absolute;top:2px;left:2px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px #0003;transition:transform .16s; }
   .budget-date #form-med-dato:checked::before { transform:translateX(16px); }
   .budget-date #form-med-dato:focus-visible { outline:2px solid var(--navy);outline-offset:2px; }
+
+
+  .budget-post-head-actions { display:flex;flex-wrap:wrap;gap:7px; }
+  .budget-filter-group { display:flex;align-items:center;gap:9px;min-width:0;max-width:100%; }
+  .budget-selection { box-sizing:border-box;display:flex;align-items:center;gap:5px;height:35px;width:180px;padding:3px 6px 3px 8px;flex:none;border:1px solid var(--border);border-radius:8px;background:var(--entry-bg);color:var(--text);font-size:11px;font-variant-numeric:tabular-nums; }
+  .budget-selection.is-empty { visibility:hidden; }
+  .budget-selection [role="status"] { flex:1;line-height:1.2; }
+  .budget-selection button { padding:4px 3px;color:var(--navy);background:none;border:0;border-radius:4px;font:inherit;font-weight:700;cursor:pointer; }
+  .budget-post { border-top:0;border-bottom:1px solid var(--border);padding-inline:8px;cursor:pointer; }
+  #budget-post-rows { border-top:1px solid var(--border); }
+  .budget-list-foot { border-top:0; }
+  .budget-post.markeret { border-radius:9px;background:var(--hover);box-shadow:inset 0 0 0 1px var(--navy);border-bottom-color:transparent; }
+  .budget-post-name { border:0;background:none;color:inherit;text-align:left;padding:0;font:inherit;font-size:13px;cursor:pointer;border-radius:5px; }
+  .budget-post-name:focus-visible { outline:2px solid var(--navy);outline-offset:3px; }
+  .budget-post-form { max-width:480px;gap:12px; }
+  .budget-post-form .bh-modal-title { font-size:18px;margin:0 0 4px; }
+  .budget-post-form-fields { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px; }
+  .budget-post-form-fields.single { grid-template-columns:1fr; }
+  .budget-post-form-fields label,.budget-post-field { display:grid;gap:5px;color:var(--text-muted);font-size:12px;font-weight:600; }
+  .budget-post-field small { display:inline;font-size:11px;font-weight:400; }
+  .budget-post-form .budget-date { margin:0; }
+  .budget-post-form .bh-form-actions { justify-content:flex-end; }
+  .budget-post-form .bh-form-actions button { min-height:36px;padding-inline:13px; }
+  .budget-post-form [hidden] { display:none; }
+  @media(max-width:550px) {
+    .budget-filter-group { flex-wrap:wrap;gap:5px; }
+    .budget-post { padding-inline:5px; }
+  }
+  @media(max-width:400px) { .budget-post-form-fields { grid-template-columns:1fr; } }
 
 </style>
 </head>
@@ -1678,7 +1703,6 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     render();
   }
   function aabnLukForm(type) {
-    nyPostAaben = false;
     aktivForm = aktivForm === type && redigererId === null ? null : type;
     redigererId = null;
     render();
@@ -1688,11 +1712,13 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     }
   }
   function lukForm() {
+    const nyPost = !!aktivForm && redigererId === null;
     aktivForm = null;
     saldoModalAaben = false;
     redigererId = null;
     render();
     detailExplorer.resume();
+    if (nyPost) document.querySelector('.budget-new')?.focus({preventScroll:true});
   }
   function postBeloebTekst(post) {
     const udtryk = post.beloebUdtryk;
@@ -1720,7 +1746,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     const kategoriEl = document.getElementById('form-kategori');
     const beskrivelseEl = document.getElementById('form-beskrivelse');
     const beloebEl = document.getElementById('form-beloeb');
-    if (!kategoriEl || !beloebEl) return;
+    if (!kategoriEl || !beloebEl || !['udgifter','indkomst'].includes(type)) return;
     const beloeb = beregnBeloebUdtryk(beloebEl.value);
     if (!Number.isFinite(beloeb) || beloeb <= 0) {
       beloebEl.focus();
@@ -1734,7 +1760,7 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     }
     const dato = dateField && !dateField.disabled ? dateField.value : '';
     const fastEl = type === 'udgifter' && fasteUdgifterAktiveret ? document.getElementById('form-fast') : null;
-    const fastValgt = fastEl ? fastEl.checked : false;
+    const fastValgt = fastEl ? fastEl.checked && !fastEl.disabled : false;
     if (redigererId) {
       const entry = data[maanedIndex][type].find(p => p.id === redigererId);
       if (entry) {
@@ -1965,7 +1991,6 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   document.addEventListener('keydown', (e) => {
     if (saveCount || backupBusy || saveError || loadError || indlaeserData || !currentUser) return;
     if(document.getElementById('bx-dialog')?.open || document.getElementById('bh-insight-dialog')?.open || document.getElementById('budget-release')?.open) return;
-    if (nyPostAaben) { if (e.key === 'Escape') window.lukNyPost(); return; }
     if (e.key === 'Escape' && sammenligningAaben) { lukSammenligning(); return; }
     if (e.key === 'Escape' && detaljePanelAaben) {
       if (detaljeVisning !== null) { tilbageTilDetaljePoster(); return; }
@@ -2245,14 +2270,30 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   }
 
   function skiftMarkering(id, event) {
-    if (event && event.target.closest('button')) return; // lad rediger/slet/kopiér-knapperne virke normalt uden at (af)markere
+    const button = event?.target.closest('button');
+    if (button && !button.matches('.budget-post-name')) return;
     if (markeredePoster.has(id)) markeredePoster.delete(id);
     else markeredePoster.add(id);
-    render();
+    opdaterMarkering();
   }
   function ryddMarkering() {
-    markeredePoster = new Set();
-    render();
+    markeredePoster.clear();
+    const filter = document.querySelector('.budget-filter-buttons [aria-pressed="true"]');
+    filter?.focus({preventScroll:true});
+    opdaterMarkering();
+  }
+
+  function opdaterMarkering() {
+    const summary = document.getElementById('budget-selection');
+    if (!summary) { render(); return; }
+    const selection = markeringsOversigt();
+    summary.classList.toggle('is-empty', !selection.count);
+    summary.querySelector('[role="status"]').textContent = selection.label;
+    document.querySelectorAll('.budget-post[data-post-id]').forEach(row => {
+      const selected = markeredePoster.has(row.dataset.postId);
+      row.classList.toggle('markeret', selected);
+      row.querySelector('.budget-post-name')?.setAttribute('aria-pressed', String(selected));
+    });
   }
   function beregnMarkeretTotal(type) {
     if (!data) return 0;
@@ -2347,29 +2388,48 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     `).join('');
   }
 
+
+  function postKategoriOptions(type, entry) {
+    const source = type === 'indkomst' ? 'indkomst' : 'udgifter';
+    let categories = alleKategorierForType(source);
+    if (!entry && type !== 'indkomst') categories = categories.filter(name => erOpsparingsKategori(name) === (type === 'opsparing'));
+    const selected = entry?.kategori;
+    if (entry && !categories.includes(selected)) categories = [selected, ...categories];
+    return categories.map(name => '<option value="' + budgetAttr(name) + '"' + (name===selected?' selected':'') + '>' + escapeHtml(name) + '</option>').join('');
+  }
+
   function renderModal(type) {
-    const kategorier = [...alleKategorierForType(type)];
-    const redigerer = redigererId !== null;
-    const entry = redigerer ? data[maanedIndex][type].find(post=>post.id===redigererId) : null;
-    if (entry && !kategorier.includes(entry.kategori)) kategorier.unshift(entry.kategori);
-    const titel = redigerer
-      ? (type === 'indkomst' ? 'Rediger indtægt' : 'Rediger udgift')
-      : (type === 'indkomst' ? 'Ny indtægt' : 'Ny udgift');
+    const editing = redigererId !== null;
+    const entry = editing ? data[maanedIndex][type].find(post=>post.id===redigererId) : null;
+    const title = editing ? (type === 'indkomst' ? 'Rediger indtægt' : 'Rediger udgift') : 'Ny postering';
+    const group = type === 'udgifter' && erOpsparingsKategori(entry?.kategori) ? 'opsparing' : type;
     return `
       <div class="bh-modal-overlay" onmousedown="if(event.target===this) lukForm()">
-        <div class="bh-modal">
-          <div class="bh-modal-title">${titel}</div>
-          <select id="form-kategori" autocomplete="off">
-            ${kategorier.map(k => '<option value="' + budgetAttr(k) + '">' + escapeHtml(k) + '</option>').join('')}
-          </select>
-          <input type="text" id="form-beskrivelse" placeholder="Beskrivelse (valgfri)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-beskrivelse-${uid()}">
-          <input type="text" id="form-beloeb" inputmode="decimal" placeholder="Beløb, fx 1250 eller 35 + 46 + 15" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" name="bh-beloeb-${uid()}" onkeydown="handleBeloebKeydown(event, '${type}')" oninput="opdaterBeloebPreview()">
+        <form class="bh-modal budget-post-form" role="dialog" aria-modal="true" aria-labelledby="budget-post-form-title" onsubmit="event.preventDefault();gemPostForm()">
+          <div>
+            <h2 class="bh-modal-title" id="budget-post-form-title">${title}</h2>
+            <p class="budget-modal-note">${MAANEDER[maanedIndex]} ${aar}</p>
+          </div>
+          <div class="budget-post-form-fields ${editing?'single':''}">
+            ${editing ? '' : `<label>Type<select id="form-post-type" onchange="skiftNyPostType(this.value)">
+              <option value="udgifter" ${group==='udgifter'?'selected':''}>Udgift</option>
+              <option value="indkomst" ${group==='indkomst'?'selected':''}>Indkomst</option>
+              <option value="opsparing">Opsparing eller investering</option>
+            </select></label>`}
+            <label>Kategori<select id="form-kategori" required>${postKategoriOptions(group, entry)}</select></label>
+          </div>
+          <label class="budget-post-field"><span>Beskrivelse <small>(valgfri)</small></span>
+            <input type="text" id="form-beskrivelse" placeholder="Fx dagligvarer" autocomplete="off" name="bh-beskrivelse-${uid()}">
+          </label>
+          <label class="budget-post-field">Beløb i kr.
+            <input type="text" id="form-beloeb" inputmode="decimal" placeholder="Fx 250,50 eller 200 + 50" autocomplete="off" spellcheck="false" name="bh-beloeb-${uid()}" oninput="opdaterBeloebPreview()" required>
+          </label>
           <div id="form-beloeb-preview" class="bh-beloeb-preview" style="display:none;"></div>
           ${renderPostDato(entry)}
-          ${type === 'udgifter' && fasteUdgifterAktiveret ? `
-            <div class="bh-fast-boks">
+          ${(type === 'udgifter' || !editing) && fasteUdgifterAktiveret ? `
+            <div id="form-fast-boks" class="bh-fast-boks" ${!editing&&group!=='udgifter'?'hidden':''}>
               <label class="bh-fast-checkbox">
-                <input type="checkbox" id="form-fast">
+                <input type="checkbox" id="form-fast" ${!editing&&group!=='udgifter'?'disabled':''}>
                 <span class="bh-fast-checkbox-tekst">
                   <span class="bh-fast-checkbox-titel">${iconRepeat(13)} Fast udgift</span>
                   <span class="bh-fast-checkbox-sub">Gentages automatisk hver måned, indtil du slår den fra</span>
@@ -2378,10 +2438,10 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
             </div>
           ` : ''}
           <div class="bh-form-actions">
-            <button class="bh-submit-btn" onclick="tilfoejPost('${type}')">${redigerer ? 'Gem ændring' : 'Gem post'}</button>
-            <button class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
+            <button type="button" class="bh-cancel-btn" onclick="lukForm()">Annuller</button>
+            <button type="submit" class="bh-submit-btn">${editing ? 'Gem ændring' : 'Gem postering'}</button>
           </div>
-        </div>
+        </form>
       </div>
     `;
   }
@@ -3340,7 +3400,9 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       }
     }
     function renderPaymentContent(name){
-      const list=sorted(selected().filter(r=>postName(r).toLocaleLowerCase('da-DK')===name.toLocaleLowerCase('da-DK')));
+      const normalized = name.toLocaleLowerCase('da-DK');
+      const payments = selected().filter(row => postName(row).toLocaleLowerCase('da-DK') === normalized);
+      const list = state.kind === 'indkomst' ? payments.sort((a,b) => b.month - a.month || b.order - a.order) : sorted(payments);
       const period=state.from===0&&state.to===11?'Hele '+aar:state.from===state.to?months[state.from]+' '+aar:short[state.from]+' – '+short[state.to]+' '+aar;
       return '<div class="bx-payment-content"><div class="expanded-note">Betalinger for '+esc(name)+' · '+period+'</div>'+list.slice(0,state.paymentLimit).map(r=>payment(r)).join('')+(list.length>state.paymentLimit?'<button class="back" data-more-payments>Vis de næste '+Math.min(6,list.length-state.paymentLimit)+' betalinger</button>':'')+'</div>';
     }
@@ -3420,7 +3482,6 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
   let postFilter = 'alle', postSoegning = '', postGraense = 4, allePosterAabne = false, postSortering = 'nyeste';
   const beloebVisning = new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 });
   const visBeloeb = value => beloebVisning.format(value) + ' kr.';
-  const kontoNetto = value => (value < 0 ? '−' : '+') + visBeloeb(Math.abs(value));
   const wallet = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M19 7V5a2 2 0 0 0-2-2L5 5a3 3 0 0 0-2 3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H6m15 4h-5a2.5 2.5 0 0 0 0 5h5"/><path d="M16 13.5h.1"/></svg>';
   const homeIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 10 9-7 9 7v10h-6v-7H9v7H3z"/></svg>';
 
@@ -3481,11 +3542,11 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
         <svg class="budget-contours" viewBox="0 0 520 250" fill="none" stroke="#b9c7ec" stroke-width="1.25" aria-hidden="true">${paths}</svg>
         <div class="budget-hero-label">${wallet()} Saldo på konto</div><strong class="budget-balance">${start === null ? '–' : visBeloeb(start + netto)}</strong>
         <p>Beregnet saldo efter posteringerne i ${MAANEDER[maanedIndex].toLowerCase()}</p>
-        <div class="budget-hero-foot"><span>${kontoNetto(netto)} siden månedens start</span><button type="button" onclick="angivStartsaldo()">${iconPencil()} Ret saldo</button></div>
+        <div class="budget-hero-foot"><button type="button" onclick="angivStartsaldo()">${iconPencil()} Ret saldo</button></div>
       </section>
       <section class="bh-panel budget-outgoing">
-        <h2>Månedens udbetalinger</h2><p>Fordeling mellem forbrug, opsparing og investering</p>
-        <div class="budget-allocation"><div class="budget-ring" style="background:${stops.length ? 'conic-gradient('+stops.join(',')+')' : 'var(--donut-empty)'}"><div><strong>${visBeloeb(totals.udgAlt)}</strong><small>udbetalt</small></div></div>
+        <h2>Forbrug, opsparing og investering</h2><p>Fordeling for ${MAANEDER[maanedIndex].toLocaleLowerCase('da-DK')}</p>
+        <div class="budget-allocation"><div class="budget-ring" style="background:${stops.length ? 'conic-gradient('+stops.join(',')+')' : 'var(--donut-empty)'}"><div><strong>${visBeloeb(totals.udgAlt)}</strong><small>i alt</small></div></div>
           <div class="budget-legend">${segments.map(([name,value,color])=>`<div><i style="background:${color}"></i><span>${name}</span><strong>${visBeloeb(value)}</strong></div>`).join('')}</div>
         </div>
       </section>
@@ -3494,8 +3555,8 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
 
   function renderMaanedTal(totals, heltAar = false) {
     const metrics = [
-      ['Indkomst',totals.ind,heltAar ? 'Samlet for året' : totals.overfoersel ? visBeloeb(totals.overfoersel)+' overført fra opsparing' : 'Penge ind denne måned',iconTrendDown(),'income'],
-      ['Forbrug',totals.udg,'Uden opsparing og investering',iconTrendUp(),'expense'],
+      ['Indkomst',totals.ind,heltAar ? 'Samlet for året' : totals.overfoersel ? visBeloeb(totals.overfoersel)+' overført fra opsparing' : 'Penge ind denne måned',iconTrendUp(),'income'],
+      ['Forbrug',totals.udg,'Uden opsparing og investering',iconTrendDown(),'expense'],
       ['Opsparing & investering',totals.opsparing,heltAar ? 'Årets indbetalinger' : 'Indbetalt denne måned',iconPiggyBank(),'save']
     ];
     return `<div class="budget-metrics${heltAar?' budget-year-metrics':''}">${metrics.map(([label,value,description,icon,tone])=>`<section class="bh-card budget-metric budget-tone-${tone}"><div class="budget-metric-label"><span>${icon}</span>${label}</div><strong>${visBeloeb(value)}</strong><small>${description}</small></section>`).join('')}</div>`;
@@ -3533,10 +3594,11 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
   function renderPostRow({post,type,group}) {
     const id = budgetAttr(post.id);
     const tone = group === 'opsparing' ? 'save' : type === 'indkomst' ? 'income' : 'expense';
-    const icon = tone === 'save' ? iconPiggyBank() : tone === 'income' ? iconTrendDown() : iconTrendUp();
+    const icon = tone === 'save' ? iconPiggyBank() : tone === 'income' ? iconTrendUp() : iconTrendDown();
     const date = typeof post.dato==='string' && /^\d{4}-\d{2}-\d{2}$/.test(post.dato) ? ' · '+Number(post.dato.slice(-2))+'. '+MAANEDER_KORT[maanedIndex].toLowerCase() : '';
-    return `<div class="budget-post budget-tone-${tone} ${markeredePoster.has(post.id)?'markeret':''}" data-post-id="${id}" onclick="skiftMarkering(this.dataset.postId,event)">
-      <div class="budget-post-name"><span class="budget-post-icon">${icon}</span><div><strong>${escapeHtml(post.beskrivelse || post.kategori)}</strong><small>${escapeHtml(post.kategori)}${date}${post.fast?' · Fast udgift':''}</small></div></div>
+    const selected = markeredePoster.has(post.id);
+    return `<div class="budget-post budget-tone-${tone} ${selected?'markeret':''}" data-post-id="${id}" onclick="skiftMarkering(this.dataset.postId,event)">
+      <button type="button" class="budget-post-name" aria-pressed="${selected}"><span class="budget-post-icon" aria-hidden="true">${icon}</span><span><strong>${escapeHtml(post.beskrivelse || post.kategori)}</strong><small>${escapeHtml(post.kategori)}${date}${post.fast?' · Fast udgift':''}</small></span></button>
       <strong class="budget-post-amount">${type==='indkomst'?'+':'−'}${visBeloeb(post.beloeb)}</strong>
       <div class="budget-post-actions">
         <button class="bh-forward-btn bh-tooltip bh-tooltip-left" onclick="kopierTilNaesteMaaned(this.closest('[data-post-id]').dataset.postId,'${type}')" aria-label="Kopiér til næste måned" data-tooltip="Kopiér til næste måned">${iconForward()}</button>
@@ -3552,20 +3614,32 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       options.map(([key,label])=>'<option value="'+key+'"'+(key===postSortering?' selected':'')+'>'+label+'</option>').join('')+'</select></div>';
   }
 
-  function renderMaanedPoster(month, totals) {
-    const marked = ['indkomst','udgifter'].filter(type=>beregnMarkeretAntal(type)>0);
+  function markeringsOversigt() {
+    const income = beregnMarkeretAntal('indkomst');
+    const expenses = beregnMarkeretAntal('udgifter');
+    const count = income + expenses;
+    const net = beregnMarkeretTotal('indkomst') - beregnMarkeretTotal('udgifter');
+    const sign = net < 0 ? '−' : net > 0 ? '+' : '';
+    const label = count ? count+' markeret · '+sign+visBeloeb(Math.abs(net))+(income && expenses ? ' netto' : '') : '';
+    return {count,label};
+  }
+
+  function renderMaanedPoster() {
+    const selection = markeringsOversigt();
     return `<section class="bh-panel budget-posts">
       <div class="budget-post-head"><div><h2>${allePosterAabne?'Månedens posteringer':'Seneste posteringer'}</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
-        ${allePosterAabne ? '<button type="button" class="bh-mini-btn" onclick="aabnDetaljePanel(Number(this.dataset.month),this)" data-month="'+maanedIndex+'">'+iconSearch()+' Detaljeret oversigt</button>' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}</div>
-      <div class="budget-post-filters"><div class="budget-filter-buttons" role="group" aria-label="Filtrér posteringer">${postFiltre.map(([key,label])=>`<button type="button" aria-pressed="${key===postFilter}" onclick="vaelgPostFilter('${key}')">${label}</button>`).join('')}</div>
+        <div class="budget-post-head-actions">
+          <button type="button" class="bh-mini-btn" onclick="aabnDetaljePanel(${maanedIndex},this)">${iconSearch()} Detaljeret oversigt</button>
+          ${allePosterAabne ? '' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}
+        </div></div>
+      <div class="budget-post-filters"><div class="budget-filter-group"><div class="budget-filter-buttons" role="group" aria-label="Filtrér posteringer">${postFiltre.map(([key,label])=>`<button type="button" aria-pressed="${key===postFilter}" onclick="vaelgPostFilter('${key}')">${label}</button>`).join('')}</div>
+        <div id="budget-selection" class="budget-selection ${selection.count?'':'is-empty'}">
+          <span role="status">${selection.label}</span><button type="button" onclick="ryddMarkering()" aria-label="Ryd markering">Ryd</button>
+        </div></div>
         ${postFilter==='udgifter' || postFilter==='opsparing' ? renderSortering() : allePosterAabne ? renderPostSortering() : ''}
         <label class="budget-post-search">${iconSearch()}<input type="search" aria-label="Søg postering" placeholder="Søg postering…" value="${budgetAttr(postSoegning)}" oninput="soegMaanedsPoster(this.value)"></label></div>
-      ${marked.map(type=>`<div class="bh-markering-bar"><span>${beregnMarkeretAntal(type)} markeret · ${type==='indkomst'?'Indkomst':'Udgifter'}</span><span class="bh-markering-total">${visBeloeb(beregnMarkeretTotal(type))}</span><button onclick="ryddMarkering()">Ryd</button></div>`).join('')}
       <div id="budget-post-rows">${renderPostRows()}</div>
-    </section>
-    <details class="bh-panel budget-month-detail"><summary>Udgifter efter kategori <span>Indkomst minus forbrug ${visBeloeb(totals.saldo)}</span></summary>
-      ${renderDonut(month.udgifter.filter(p=>!erOpsparingsKategori(p.kategori)))}
-    </details>`;
+    </section>`;
   }
 
   function renderApp() {
@@ -3578,10 +3652,9 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
         ${renderLayoutNav(erOversigt)}
         <main class="bh-root budget-main">
           ${renderLayoutHeader(erOversigt)}
-          ${erOversigt ? renderYearOverview() : renderMaanedHero(maaned,totals)+renderMaanedTal(totals)+renderMaanedPoster(maaned,totals)}
+          ${erOversigt ? renderYearOverview() : renderMaanedHero(maaned,totals)+renderMaanedTal(totals)+renderMaanedPoster()}
         </main>
       </div>
-      ${nyPostAaben ? renderNyPost() : ''}
       ${aktivForm ? renderModal(aktivForm) : ''}
       ${saldoModalAaben ? renderSaldoModal() : ''}
       ${indstillingerAaben ? renderIndstillingerModal() : ''}
@@ -3616,14 +3689,6 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     if (!input) return;
     input.value = name;
     tilfoejKategoriFraIndstillinger();
-  }
-
-  function renderNyPost() {
-    return `<div class="bh-modal-overlay" onmousedown="if(event.target===this) lukNyPost()"><div class="bh-modal" role="dialog" aria-modal="true" aria-label="Ny postering">
-      <div class="bh-modal-title">Ny postering</div><p class="budget-modal-note">${MAANEDER[maanedIndex]} ${aar} · Vælg, hvad du vil registrere.</p>
-      <div class="budget-new-options"><button class="bh-add-btn" onclick="aabnLukForm('udgifter')">${iconTrendUp()} Udgift, opsparing eller investering</button>
-      <button class="bh-add-btn" onclick="aabnLukForm('indkomst')">${iconTrendDown()} Indtægt</button></div>
-      <button class="bh-cancel-btn" onclick="lukNyPost()">Annuller</button></div></div>`;
   }
 
   function visBudgetOpdatering(igen = false) {
@@ -3681,13 +3746,19 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     }
   }
 
-  let nyPostAaben = false;
-  window.aabnNyPost = () => {
-    nyPostAaben=true;
-    render();
-    document.querySelector('.budget-new-options button')?.focus();
+
+  window.aabnNyPost = () => aabnLukForm('udgifter');
+  window.skiftNyPostType = type => {
+    if (!['udgifter','indkomst','opsparing'].includes(type) || redigererId !== null) return;
+    aktivForm = type === 'indkomst' ? 'indkomst' : 'udgifter';
+    document.getElementById('form-kategori').innerHTML = postKategoriOptions(type);
+    const fast = document.getElementById('form-fast');
+    if (fast) {
+      fast.disabled = type !== 'udgifter';
+      document.getElementById('form-fast-boks').hidden = fast.disabled;
+    }
   };
-  window.lukNyPost = () => { nyPostAaben=false; render(); document.querySelector('.budget-new')?.focus(); };
+  window.gemPostForm = () => tilfoejPost(aktivForm);
   window.flytMaaned = flytMaaned;
   window.vaelgPostFilter = value => {
     postFilter=value; render();
@@ -3833,7 +3904,6 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
 
   onAuthStateChanged(auth, (user) => {
     document.getElementById('budget-release')?.remove();
-    nyPostAaben = false;
     nulstilPostListe();
     tidligereKategorier = {indkomst:[], udgifter:[]};
     document.getElementById('bh-insight-dialog')?.remove();
