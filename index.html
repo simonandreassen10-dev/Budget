@@ -3344,7 +3344,25 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     let state={kind:'udgifter',from:0,to:11,category:'',query:'',sort:'desc',expanded:'',limit:8,paymentLimit:6};
 const originalPostName=r=>r.name.split(/\s+[–—-]\s+/)[0].trim();
 const postName=r=>r.groupName||originalPostName(r);
-function normalizedPostName(name){return name.normalize('NFC').toLocaleLowerCase('da-DK').replace(/['’‘`´]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(' ').map(word=>word.replace(/billet(?:ter(?:ne)?|ten)?$/u,'billet')).join(' ');}
+// Resolve common missing/doubled/swapped letters to one ticket stem first.
+// Otherwise two different typos can each match "billetter" but not each other.
+const ticketSpellings=(()=>{
+const variants=new Set();
+for(const form of ['billet','billetter','billetten','billetterne']){
+variants.add(form);
+for(let i=1;i<form.length;i++){
+variants.add(form.slice(0,i)+form.slice(i+1));
+variants.add(form.slice(0,i)+form[i]+form.slice(i));
+if(i+1<form.length)variants.add(form.slice(0,i)+form[i+1]+form[i]+form.slice(i+2));
+}
+}
+return [...variants].sort((a,b)=>b.length-a.length||a.localeCompare(b,'da'));
+})();
+function ticketStem(word){
+const spelling=ticketSpellings.find(form=>word.endsWith(form));
+return spelling?word.slice(0,-spelling.length)+'billet':word;
+}
+function normalizedPostName(name){return name.normalize('NFC').toLocaleLowerCase('da-DK').replace(/['’‘`´]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(' ').map(ticketStem).join(' ');}
 function oneLetterApart(a,b){
 if(a===b)return true;
 if(Math.abs(a.length-b.length)>1)return false;
