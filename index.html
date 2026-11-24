@@ -3344,13 +3344,19 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     let state={kind:'udgifter',from:0,to:11,category:'',query:'',sort:'desc',expanded:'',limit:8,paymentLimit:6};
 const originalPostName=r=>r.name.split(/\s+[–—-]\s+/)[0].trim();
 const postName=r=>r.groupName||originalPostName(r);
-function normalizedPostName(name){return name.normalize('NFC').toLocaleLowerCase('da-DK').replace(/['’‘`´]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim();}
+function normalizedPostName(name){return name.normalize('NFC').toLocaleLowerCase('da-DK').replace(/['’‘`´]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(' ').map(word=>word.replace(/billet(?:ter(?:ne)?|ten)?$/u,'billet')).join(' ');}
 function oneLetterApart(a,b){
 if(a===b)return true;
 if(Math.abs(a.length-b.length)>1)return false;
 if(a.length===b.length){const differences=[];for(let i=0;i<a.length;i++)if(a[i]!==b[i])differences.push(i);return differences.length===1||(differences.length===2&&differences[1]===differences[0]+1&&a[differences[0]]===b[differences[1]]&&a[differences[1]]===b[differences[0]]);}
 if(a.length>b.length)[a,b]=[b,a];
 let i=0;while(i<a.length&&a[i]===b[i])i++;return a.slice(i)===b.slice(i+1);
+}
+// Compare ticket inflections before allowing one typo, so singular/plural
+// still joins a misspelling such as "biletter" without widening all matches.
+function similarPostWord(a,b){
+const forms=word=>word.endsWith('billet')?[word,word+'ter',word+'ten',word+'terne']:[word];
+return forms(a).some(left=>forms(b).some(right=>oneLetterApart(left,right)));
 }
 function similarPostNames(a,b){
 const x=normalizedPostName(a),y=normalizedPostName(b);
@@ -3361,7 +3367,7 @@ if((x.match(/\d+/g)||[]).join('|')!==(y.match(/\d+/g)||[]).join('|'))return fals
 const left=x.split(' '),right=y.split(' ');if(left.length!==right.length)return false;
 let changed=0;
 for(let i=0;i<left.length;i++)if(left[i]!==right[i]){
-if(++changed>1||Math.min(left[i].length,right[i].length)<5||left[i][0]!==right[i][0]||!oneLetterApart(left[i],right[i]))return false;
+if(++changed>1||Math.min(left[i].length,right[i].length)<5||left[i][0]!==right[i][0]||!similarPostWord(left[i],right[i]))return false;
 }
 return true;
 }
