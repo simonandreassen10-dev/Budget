@@ -3517,7 +3517,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
           <button class="bh-year-btn bh-tooltip" data-tooltip="Forrige måned" onclick="flytMaaned(-1)" aria-label="Forrige måned" ${aar===1000 && maanedIndex===0 ? 'disabled' : ''}>${iconChevron('left')}</button>
           <select aria-label="Vælg måned" onchange="skiftMaaned(Number(this.value))">${MAANEDER.map((m,i)=>'<option value="'+i+'"'+(i===maanedIndex?' selected':'')+'>'+m+'</option>').join('')}</select>
           <button class="bh-year-btn bh-tooltip bh-tooltip-left" data-tooltip="Næste måned" onclick="flytMaaned(1)" aria-label="Næste måned" ${aar===9999 && maanedIndex===11 ? 'disabled' : ''}>${iconChevron('right')}</button>
-        </div><button type="button" class="bh-submit-btn budget-new" onclick="aabnNyPost()">${iconPlus()} Ny postering</button>`}
+        </div>`}
       </div>
     </header>`;
   }
@@ -3629,6 +3629,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     return `<section class="bh-panel budget-posts">
       <div class="budget-post-head"><div><h2>${allePosterAabne?'Månedens posteringer':'Seneste posteringer'}</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
         <div class="budget-post-head-actions">
+          <button type="button" class="bh-submit-btn budget-new" onclick="aabnNyPost()">${iconPlus()} Ny postering</button>
           <button type="button" class="bh-mini-btn" onclick="aabnDetaljePanel(${maanedIndex},this)">${iconSearch()} Detaljeret oversigt</button>
           ${allePosterAabne ? '' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}
         </div></div>
