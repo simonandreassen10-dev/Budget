@@ -3342,7 +3342,43 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   }
   const detailExplorer=(()=>{
     let state={kind:'udgifter',from:0,to:11,category:'',query:'',sort:'desc',expanded:'',limit:8,paymentLimit:6};
-const postName=r=>r.name.split(/\s+[–—-]\s+/)[0].trim();
+const originalPostName=r=>r.name.split(/\s+[–—-]\s+/)[0].trim();
+const postName=r=>r.groupName||originalPostName(r);
+function normalizedPostName(name){return name.normalize('NFC').toLocaleLowerCase('da-DK').replace(/['’‘`´]/g,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim();}
+function oneLetterApart(a,b){
+if(a===b)return true;
+if(Math.abs(a.length-b.length)>1)return false;
+if(a.length===b.length){const differences=[];for(let i=0;i<a.length;i++)if(a[i]!==b[i])differences.push(i);return differences.length===1||(differences.length===2&&differences[1]===differences[0]+1&&a[differences[0]]===b[differences[1]]&&a[differences[1]]===b[differences[0]]);}
+if(a.length>b.length)[a,b]=[b,a];
+let i=0;while(i<a.length&&a[i]===b[i])i++;return a.slice(i)===b.slice(i+1);
+}
+function similarPostNames(a,b){
+const x=normalizedPostName(a),y=normalizedPostName(b);
+if(!x||!y)return false;
+if(x.replace(/ /g,'')===y.replace(/ /g,''))return true;
+// Numbers and short words stay exact; allow just one small typo in a longer word.
+if((x.match(/\d+/g)||[]).join('|')!==(y.match(/\d+/g)||[]).join('|'))return false;
+const left=x.split(' '),right=y.split(' ');if(left.length!==right.length)return false;
+let changed=0;
+for(let i=0;i<left.length;i++)if(left[i]!==right[i]){
+if(++changed>1||Math.min(left[i].length,right[i].length)<5||left[i][0]!==right[i][0]||!oneLetterApart(left[i],right[i]))return false;
+}
+return true;
+}
+function assignPostGroups(list){
+const scopes=new Map();
+for(const row of list){const scope=JSON.stringify([row.kind,row.category]);if(!scopes.has(scope))scopes.set(scope,new Map());const names=scopes.get(scope),name=originalPostName(row);if(!names.has(name))names.set(name,{name,rows:[]});names.get(name).rows.push(row);}
+for(const names of scopes.values()){
+const clusters=[];
+const candidates=[...names.values()].sort((a,b)=>b.rows.length-a.rows.length||a.name.localeCompare(b.name,'da'));
+for(const candidate of candidates){
+const matches=clusters.filter(cluster=>cluster.every(member=>similarPostNames(member.name,candidate.name)));
+// Ambiguous matches remain separate; do not chain distant spellings together.
+if(matches.length===1)matches[0].push(candidate);else clusters.push([candidate]);
+}
+for(const cluster of clusters)for(const member of cluster)for(const row of member.rows)row.groupName=cluster[0].name;
+}
+}
 function selected(){const words=state.query.toLocaleLowerCase('da-DK').trim().split(/\s+/).filter(Boolean);return rows.filter(r=>r.kind===state.kind&&r.month>=state.from&&r.month<=state.to&&(!state.category||r.category===state.category)&&words.every(w=>(r.name+' '+r.category).toLocaleLowerCase('da-DK').includes(w)));}
 function groups(list,key){const map=new Map();for(const r of list){const name=key(r),mapKey=state.category?name.toLocaleLowerCase('da-DK'):name;if(!map.has(mapKey))map.set(mapKey,{name,amount:0,count:0,latest:-1,order:-1});const g=map.get(mapKey);g.amount+=r.amount;g.count++;g.latest=Math.max(g.latest,r.month);g.order=Math.max(g.order,r.order);}return [...map.values()];}
 function sorted(list){return [...list].sort((a,b)=>state.sort==='name'?a.name.localeCompare(b.name,'da'):state.sort==='newest'?((b.latest??b.month)-(a.latest??a.month)||b.order-a.order):state.sort==='asc'?a.amount-b.amount:b.amount-a.amount);}
@@ -3363,7 +3399,7 @@ $('back')?.addEventListener('click',back);
 $('title').textContent=searching?'Søgeresultater'+(state.category?' i '+state.category:''):state.category||'Alle '+labels[state.kind];$('title').tabIndex=-1;
 const period=state.from===0&&state.to===11?'Hele '+aar:state.from===state.to?months[state.from]+' '+aar:short[state.from]+' – '+short[state.to]+' '+aar;
 $('count').textContent=count+(count===1?' betaling · ':' betalinger · ')+period;$('total').textContent=kr(total);$('total').style.color=state.kind==='indkomst'?'var(--green)':state.kind==='opsparing'?'var(--navy)':'var(--red)';const annual=annualAverage();$('average').textContent=kr(annual.amount);$('average-label').textContent='Gns. pr. måned '+(aar===new Date().getFullYear()?'i år':'i '+aar)+': ';$('average-help').textContent=annual.months?'Januar–'+months[annual.months-1].toLocaleLowerCase('da-DK')+' '+aar+' · '+annual.months+' måneder, inklusive måneder uden posteringer. Uafhængigt af periode og søgning.':'Ingen forløbne måneder i '+aar+'.';
-$('note').textContent=(state.kind==='udgifter'?'Forbrug er uden opsparing og investering. ':state.kind==='indkomst'?'Overførsler fra opsparing tæller ikke som indkomst. ':'Viser indbetalinger i perioden, ikke din samlede formue. ')+'Tallene følger den valgte periode. Nyeste følger måned og oprettelsesrækkefølge.';
+$('note').textContent=(state.kind==='udgifter'?'Forbrug er uden opsparing og investering. ':state.kind==='indkomst'?'Overførsler fra opsparing tæller ikke som indkomst. ':'Viser indbetalinger i perioden, ikke din samlede formue. ')+'Tallene følger den valgte periode. Nyeste følger måned og oprettelsesrækkefølge.'+(state.category?' Lignende navne og små stavefejl samles. Fold ud for at se de oprindelige tekster.':'');
 dialog.querySelectorAll('[data-kind]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kind===state.kind)));
 const items=sorted(searching?list:groups(list,r=>state.category?postName(r):r.category));
 let markup='';
@@ -3388,7 +3424,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       try {await element.animate(frames,{duration,easing:'cubic-bezier(.2,.8,.2,1)'}).finished;} catch(_){}
     }
     function resetState(){state={kind:'udgifter',from:0,to:11,category:'',query:'',sort:'desc',expanded:'',limit:8,paymentLimit:6};}
-    function refresh(){rows=detaljePosterFra(data);}
+    function refresh(){rows=detaljePosterFra(data);assignPostGroups(rows);}
     async function animateHeight(panel,opening){
       if(!panel)return;
       panel.hidden=false;
