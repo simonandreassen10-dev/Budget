@@ -1132,6 +1132,26 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   }
   @media(max-width:400px) { .budget-post-form-fields { grid-template-columns:1fr; } }
 
+
+  html:has(.budget-layout),body:has(.budget-layout) { scrollbar-width:none;scrollbar-gutter:auto; }
+  html:has(.budget-layout)::-webkit-scrollbar,body:has(.budget-layout)::-webkit-scrollbar { width:0;height:0; }
+  .budget-post-filters { align-items:center;gap:10px 16px; }
+  .budget-post-tools { display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto;flex-wrap:wrap; }
+  .budget-post-tools .bh-sortering { gap:7px; }
+  .budget-post-tools .bh-sortering label { white-space:nowrap;font-size:11px; }
+  .budget-post-tools select { min-height:35px;max-width:154px;border-radius:9px;background:var(--card); }
+  .budget-post-tools .budget-post-search { margin-left:0;width:210px; }
+  .budget-posts .budget-new { border:1px solid #40527e;border-radius:10px;background:#3d507d;color:#fff;box-shadow:0 2px 4px #18244218;font-family:inherit;font-size:12px;font-weight:650;min-height:39px;padding:9px 13px;transition:background .16s,box-shadow .16s,border-color .16s; }
+  .budget-posts .budget-new:hover { background:#33446c;border-color:#33446c;box-shadow:0 3px 9px #18244225; }
+  .budget-posts .budget-new:focus-visible { outline:2px solid var(--navy);outline-offset:3px; }
+  body.bh-dark .budget-posts .budget-new { background:#344563;color:#eef3ff;border-color:#627696;box-shadow:0 2px 5px #0002; }
+  body.bh-dark .budget-posts .budget-new:hover { background:#405476;border-color:#8ca2c4; }
+  @media(max-width:700px) {
+    .budget-post-tools { flex:1;justify-content:flex-start; }
+    .budget-post-tools .budget-post-search { flex:1;min-width:145px;width:auto; }
+  }
+  @media(prefers-reduced-motion:reduce) { .budget-posts .budget-new { transition:none; } }
+
 </style>
 </head>
 <body>
@@ -2321,7 +2341,8 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     ['nyeste', 'Nyeste først'],
     ['aeldste', 'Ældste først'],
     ['hoejeste', 'Højeste beløb'],
-    ['laveste', 'Laveste beløb']
+    ['laveste', 'Laveste beløb'],
+    ['navn', 'Navn A–Å']
   ];
   const sorteringHukommelse = new Map();
   function sorteringsNoegle() {
@@ -3544,13 +3565,13 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
 
 
   const postFiltre = [['alle','Alle'],['udgifter','Udgifter'],['indkomst','Indkomster'],['opsparing','Opsparing']];
-  let postFilter = 'alle', postSoegning = '', postGraense = 4, allePosterAabne = false, postSortering = 'nyeste';
+  let postFilter = 'alle', postSoegning = '';
   const beloebVisning = new Intl.NumberFormat('da-DK', { maximumFractionDigits: 2 });
   const visBeloeb = value => beloebVisning.format(value) + ' kr.';
   const wallet = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M19 7V5a2 2 0 0 0-2-2L5 5a3 3 0 0 0-2 3v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H6m15 4h-5a2.5 2.5 0 0 0 0 5h5"/><path d="M16 13.5h.1"/></svg>';
   const homeIcon = () => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m3 10 9-7 9 7v10h-6v-7H9v7H3z"/></svg>';
 
-  function nulstilPostListe() { postFilter = 'alle'; postSoegning = ''; postGraense = 4; allePosterAabne = false; postSortering = 'nyeste'; }
+  function nulstilPostListe() { postFilter = 'alle'; postSoegning = ''; }
 
   function flytMaaned(delta) {
     const next = maanedIndex + delta;
@@ -3637,23 +3658,19 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       (postFilter==='alle' || group===postFilter) &&
       (!search || [post.kategori,post.beskrivelse,post.dato,visBeloeb(post.beloeb)].some(value => String(value || '').toLocaleLowerCase('da-DK').includes(search)))
     );
-    if (postFilter==='udgifter' || postFilter==='opsparing') {
-      const order = sorterUdgifter(rows.map(({post})=>post), hentSortering());
-      const byPost = new Map(rows.map(row=>[row.post,row]));
-      rows.splice(0, rows.length, ...order.map(post=>byPost.get(post)));
-    } else {
-      const newest = (a,b)=>String(b.post.dato || '').localeCompare(String(a.post.dato || '')) || b.index-a.index;
-      const order = {
-        nyeste: newest,
-        hoejeste: (a,b)=>b.post.beloeb-a.post.beloeb || newest(a,b),
-        laveste: (a,b)=>a.post.beloeb-b.post.beloeb || newest(a,b),
-        navn: (a,b)=>(a.post.beskrivelse||a.post.kategori).localeCompare(b.post.beskrivelse||b.post.kategori,'da') || newest(a,b)
-      };
-      rows.sort(order[postSortering]);
-    }
-    return `${rows.length ? rows.slice(0,postGraense).map(renderPostRow).join('') : '<div class="bh-empty">'+(search ? 'Ingen posteringer matcher din søgning.' : 'Ingen posteringer at vise.')+'</div>'}
-      <div class="budget-list-foot"><span role="status">${Math.min(rows.length,postGraense)} af ${rows.length} posteringer</span>
-      ${rows.length>postGraense ? '<button class="bh-mini-btn" onclick="udvidPostListe(false)">'+iconPlus()+' Vis flere</button>' : ''}</div>`;
+
+    const newest = (a,b) => String(b.post.dato || '').localeCompare(String(a.post.dato || '')) || b.index-a.index;
+    const order = {
+      kategori: (a,b) => a.post.kategori.localeCompare(b.post.kategori,'da') || newest(a,b),
+      nyeste: newest,
+      aeldste: (a,b) => -newest(a,b),
+      hoejeste: (a,b) => b.post.beloeb-a.post.beloeb || newest(a,b),
+      laveste: (a,b) => a.post.beloeb-b.post.beloeb || newest(a,b),
+      navn: (a,b) => (a.post.beskrivelse || a.post.kategori).localeCompare(b.post.beskrivelse || b.post.kategori,'da') || newest(a,b)
+    };
+    rows.sort(order[hentSortering()]);
+    return (rows.length ? rows.map(renderPostRow).join('') : '<div class="bh-empty">'+(search ? 'Ingen posteringer matcher din søgning.' : 'Ingen posteringer at vise.')+'</div>') +
+      '<div class="budget-list-foot"><span role="status">'+rows.length+' '+(rows.length===1?'postering':'posteringer')+'</span></div>';
   }
 
   function renderPostRow({post,type,group}) {
@@ -3674,9 +3691,10 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
   }
 
   function renderPostSortering() {
-    const options = [['nyeste','Nyeste først'],['hoejeste','Højeste beløb'],['laveste','Laveste beløb'],['navn','Navn A–Å']];
+    const options = SORTERINGSVALG;
+    const selected = hentSortering();
     return '<div class="bh-sortering"><label for="budget-post-sort">Sortér efter</label><select id="budget-post-sort" onchange="sorterMaanedsPoster(this.value)">'+
-      options.map(([key,label])=>'<option value="'+key+'"'+(key===postSortering?' selected':'')+'>'+label+'</option>').join('')+'</select></div>';
+      options.map(([key,label])=>'<option value="'+key+'"'+(key===selected?' selected':'')+'>'+label+'</option>').join('')+'</select></div>';
   }
 
   function markeringsOversigt() {
@@ -3692,18 +3710,17 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
   function renderMaanedPoster() {
     const selection = markeringsOversigt();
     return `<section class="bh-panel budget-posts">
-      <div class="budget-post-head"><div><h2>${allePosterAabne?'Månedens posteringer':'Seneste posteringer'}</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
+      <div class="budget-post-head"><div><h2>Månedens posteringer</h2><p>${MAANEDER[maanedIndex]} ${aar}</p></div>
         <div class="budget-post-head-actions">
           <button type="button" class="bh-submit-btn budget-new" onclick="aabnNyPost()">${iconPlus()} Ny postering</button>
           <button type="button" class="bh-mini-btn" onclick="aabnDetaljePanel(${maanedIndex},this)">${iconSearch()} Detaljeret oversigt</button>
-          ${allePosterAabne ? '' : '<button type="button" class="bh-mini-btn" onclick="udvidPostListe(true)">'+iconChevron('right')+' Se alle posteringer</button>'}
         </div></div>
       <div class="budget-post-filters"><div class="budget-filter-group"><div class="budget-filter-buttons" role="group" aria-label="Filtrér posteringer">${postFiltre.map(([key,label])=>`<button type="button" aria-pressed="${key===postFilter}" onclick="vaelgPostFilter('${key}')">${label}</button>`).join('')}</div>
         <div id="budget-selection" class="budget-selection ${selection.count?'':'is-empty'}">
           <span role="status">${selection.label}</span><button type="button" onclick="ryddMarkering()" aria-label="Ryd markering">Ryd</button>
         </div></div>
-        ${postFilter==='udgifter' || postFilter==='opsparing' ? renderSortering() : allePosterAabne ? renderPostSortering() : ''}
-        <label class="budget-post-search">${iconSearch()}<input type="search" aria-label="Søg postering" placeholder="Søg postering…" value="${budgetAttr(postSoegning)}" oninput="soegMaanedsPoster(this.value)"></label></div>
+        <div class="budget-post-tools">${renderPostSortering()}
+        <label class="budget-post-search">${iconSearch()}<input type="search" aria-label="Søg postering" placeholder="Søg postering…" value="${budgetAttr(postSoegning)}" oninput="soegMaanedsPoster(this.value)"></label></div></div>
       <div id="budget-post-rows">${renderPostRows()}</div>
     </section>`;
   }
@@ -3834,20 +3851,12 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     postSoegning=value;
     document.getElementById('budget-post-rows').innerHTML=renderPostRows();
   };
-  window.udvidPostListe = all => {
-    if (all) {
-      allePosterAabne = true;
-      postGraense = Math.max(20,postGraense);
-      render();
-      document.querySelector('.budget-post-head button')?.focus({preventScroll:true});
-    } else {
-      postGraense += 12;
-      document.getElementById('budget-post-rows').innerHTML=renderPostRows();
-    }
-  };
+
   window.sorterMaanedsPoster = value => {
-    if (!['nyeste','hoejeste','laveste','navn'].includes(value)) return;
-    postSortering=value;
+    if (!SORTERINGSVALG.some(([id]) => id === value)) return;
+    const key = sorteringsNoegle();
+    sorteringHukommelse.set(key,value);
+    try { localStorage.setItem(key,value); } catch (_) { /* Valget bevares i denne session. */ }
     document.getElementById('budget-post-rows').innerHTML=renderPostRows();
   };
   window.skiftPostDato = skiftPostDato;
