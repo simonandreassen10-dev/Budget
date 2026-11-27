@@ -1217,6 +1217,57 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     .budget-year-metrics .budget-metric > small { grid-column:1; }
   }
 
+
+  /* Dialogs have one scrolling surface, including on short screens. */
+  .bh-modal-overlay { overflow:hidden;scrollbar-gutter:auto;padding:16px; }
+  .bh-modal-overlay > .bh-modal { max-height:calc(100dvh - 32px);min-height:0;flex-shrink:1;scrollbar-width:thin; }
+  .bh-modal > * { flex-shrink:0; }
+  .bh-modal > .bh-cancel-btn { font:600 12.5px Inter,sans-serif;line-height:1.5;padding:9px 12px;border-radius:8px;cursor:pointer;white-space:normal; }
+  .bh-modal :is(.bh-hjaelp-intro,.bh-backup-box) { overflow-wrap:anywhere; }
+  #bx-search::-webkit-search-cancel-button { -webkit-appearance:none; }
+  @media(max-width:610px) {
+    .bh-modal-overlay { padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); }
+    .bh-modal-overlay > .bh-modal { max-height:calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:18px 16px; }
+    .bh-modal :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select),.bh-auth-wrap input,.budget-post-search input,.budget-post-tools select,.budget-period select { min-height:44px;font-size:16px; }
+    .bh-modal :is(.bh-cancel-btn,.bh-submit-btn,.bh-add-btn,.bh-mini-btn,.bh-tilbage-link,.bh-hjaelp-header),.bh-auth-wrap button { min-height:44px; }
+    .bh-modal button:not(.bh-toggle-switch) { min-height:44px; }
+    .bh-modal .bh-del-btn { min-width:44px; }
+    .bh-modal .bh-form-actions { gap:8px; }
+    .bh-modal .bh-tilbage-link { align-self:flex-start;display:inline-flex;align-items:center; }
+    .bh-modal .bh-backup-box .bh-add-btn { padding:9px 12px; }
+    .budget-rail :is(.budget-nav button,.budget-rail-bottom button) { min-height:44px; }
+    .budget-period { min-height:44px; }
+    .budget-month button { min-width:36px;min-height:44px; }
+    .budget-post-head-actions { width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .budget-post-head-actions > button { min-height:44px;padding:9px 7px;font-size:11px; }
+    .budget-filter-buttons { width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .budget-filter-buttons button { min-height:44px;padding:7px 3px; }
+    .budget-post-tools { display:grid;grid-template-columns:minmax(0,1fr);gap:8px;width:100%;margin-left:0; }
+    .budget-post-tools .bh-sortering { justify-content:space-between; }
+    .budget-post-tools select { flex:1;max-width:none;min-width:0; }
+    .budget-post-tools .budget-post-search { width:100%;min-width:0; }
+    .budget-post { grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 0; }
+    .budget-post-name { grid-column:1;grid-row:1 / span 2;align-self:stretch; }
+    .budget-post-amount { grid-column:2;grid-row:1;text-align:right;white-space:nowrap; }
+    .budget-post-actions { grid-column:2;grid-row:2;justify-content:flex-end;gap:2px; }
+    .budget-post-actions button { width:44px;height:44px; }
+    .budget-selection { max-width:100%; }
+    .budget-hero-foot > button { min-height:44px; }
+    .bh-explorer :is(input,select) { font-size:16px;min-height:44px; }
+    .bh-explorer :is(.edit-button,.back,.footer button,.soft,.more-options > summary) { min-height:44px; }
+    .bh-explorer .tabs button { min-height:48px; }
+  }
+  @media(max-width:420px) {
+    .budget-metrics { grid-template-columns:1fr;gap:8px; }
+    .budget-metrics .budget-metric { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px;min-height:0;padding:13px; }
+    .budget-metrics .budget-metric-label { min-width:0; }
+    .budget-metrics .budget-metric > strong { grid-column:2;grid-row:1 / span 2;margin:0;font-size:clamp(18px,5vw,20px);white-space:nowrap; }
+    .budget-metrics .budget-metric > small { grid-column:1; }
+    .bh-saldo-adjustment-row { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  }
+  @media(max-width:350px) { .budget-filter-buttons { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media(hover:none) { .bh-card:hover { transform:none; } }
+
 </style>
 </head>
 <body>
