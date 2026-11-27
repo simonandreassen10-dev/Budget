@@ -1183,6 +1183,31 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   }
   @media(prefers-reduced-motion:reduce){.annual-navigation button{transition:none;}}
 
+
+  /* Keep annual navigation reachable and comfortable on small screens. */
+  @media(max-width:650px) {
+    .annual-navigation { position:sticky;top:8px;z-index:30;scroll-margin-top:8px;box-shadow:0 5px 18px var(--shadow); }
+    .annual-navigation button { min-width:0;min-height:44px;padding:10px 4px;touch-action:manipulation; }
+    .annual-navigation strong { font-size:12px; }
+    .annual-subnav { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%; }
+    .annual-subnav button { min-height:48px;line-height:1.4;padding:8px 6px; }
+    #annual-insights select { min-height:44px;font-size:16px; }
+    #annual-insights .bh-sammenlign-toggle button { min-height:44px; }
+    #annual-insights .bh-insight-selectors { gap:8px;padding:12px; }
+    #annual-posts :is(input,select) { min-height:44px;font-size:16px; }
+    #annual-posts .tabs button { min-height:48px; }
+    #annual-posts :is(.edit-button,.back,.footer button,.more-options > summary) { min-height:44px; }
+    #annual-posts :is(.summary-title,.group-button,.category-row) { scroll-margin-top:76px; }
+  }
+  @media(max-width:380px) {
+    #annual-insights .bh-insight-selectors { display:grid;grid-template-columns:1fr;gap:12px; }
+    #annual-insights .bh-insight-selectors > span { display:none; }
+    #annual-insights .bh-sammenlign-vaelgere { flex-direction:column;align-items:stretch; }
+    #annual-insights .bh-sammenlign-vaelgere select { width:100%; }
+    #annual-insights .bh-sammenlign-vs { text-align:center; }
+    #annual-posts .summary { align-items:flex-start;flex-wrap:wrap;gap:12px; }
+  }
+
 </style>
 </head>
 <body>
@@ -4230,10 +4255,12 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
 
   window.vaelgAnnualView = value => {
     if(!annualViews.some(([key])=>key===value))return;
+    const navigationWasPinned=window.matchMedia?.('(max-width:650px)').matches && document.querySelector('.annual-navigation')?.getBoundingClientRect().top<=12;
     detailExplorer.discard();
     annualView=value;
     if(value==='compare' && !['compare','changes'].includes(indsigtFane))indsigtFane='compare';
     render();
+    if(navigationWasPinned)document.querySelector('.annual-navigation')?.scrollIntoView({block:'start',behavior:'instant'});
     document.getElementById('annual-nav-'+value)?.focus({preventScroll:true});
   };
   window.vaelgAnnualCompare = value => {
