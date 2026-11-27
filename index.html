@@ -1152,6 +1152,37 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
   }
   @media(prefers-reduced-motion:reduce) { .budget-posts .budget-new { transition:none; } }
 
+
+  .annual-navigation { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--card);margin:0 0 22px;box-shadow:0 3px 12px #17243a08; }
+  .annual-navigation button { text-align:center;border:1px solid transparent;border-radius:10px;padding:13px 15px;cursor:pointer;background:transparent;color:var(--text-muted);font:inherit;transition:background .18s,color .18s,border-color .18s; }
+  .annual-navigation strong { display:block;font-size:13px;font-weight:700; }
+  .annual-navigation small { display:block;font-size:10px;margin-top:5px;line-height:1.4; }
+  .annual-navigation button:hover { background:var(--bg);color:var(--text); }
+  .annual-navigation button[aria-current=page] { background:var(--soft-navy);color:var(--navy);border-color:color-mix(in srgb,var(--navy) 22%,var(--border)); }
+  .annual-navigation button:focus-visible,.annual-subnav button:focus-visible { outline:2px solid var(--navy);outline-offset:2px; }
+  .annual-analysis { padding:24px; }
+  .annual-panel-heading { margin-bottom:20px; }
+  .annual-panel-heading h2 { font-size:20px;letter-spacing:-.6px; }
+  .annual-panel-heading p { color:var(--text-muted);font-size:12px;line-height:1.6;margin:6px 0 0; }
+  .annual-subnav { display:flex;flex-wrap:wrap;gap:4px;margin:0 0 24px;padding:4px;background:var(--entry-bg);border:1px solid var(--border);border-radius:10px;width:fit-content; }
+  .annual-subnav button { background:transparent;color:var(--text-muted);border:1px solid transparent;border-radius:7px;font:600 12px Inter,sans-serif;padding:8px 12px;cursor:pointer; }
+  .annual-subnav button[aria-pressed=true] { background:var(--card);color:var(--navy);border-color:var(--border); }
+  #annual-posts .bh-explorer { position:static;display:block;width:100%;max-width:none;max-height:none;margin:0;overflow:visible;padding:24px;border-radius:16px;box-shadow:0 3px 12px var(--shadow); }
+  #annual-posts #bx-close,#annual-posts .eyebrow { display:none; }
+  #annual-posts .bh-explorer h1 { font-size:20px;letter-spacing:-.6px; }
+  #annual-posts .bh-explorer .window > header { margin-bottom:22px; }
+  #annual-posts .bh-explorer .controls { margin-top:0; }
+  #annual-posts .bh-explorer .category-row { border-radius:10px; }
+  .annual-analysis .bh-insight-metrics { margin-bottom:0; }
+  @media(max-width:650px) {
+    .annual-navigation { gap:3px;padding:4px;margin-bottom:14px; }
+    .annual-navigation button { padding:11px 5px;text-align:center; }
+    .annual-navigation strong { font-size:11px; }
+    .annual-navigation small { display:none; }
+    .annual-analysis,#annual-posts .bh-explorer { padding:17px 13px; }
+  }
+  @media(prefers-reduced-motion:reduce){.annual-navigation button{transition:none;}}
+
 </style>
 </head>
 <body>
@@ -3518,7 +3549,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
         if(dialog===targetDialog)button?.focus({preventScroll:true});
       }finally{busy=false;}
     }
-    function enterCategory(name){state.category=name;state.limit=8;state.expanded='';$('status').textContent='';render();motion($('results'),[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}]);$('title').focus({preventScroll:true});dialog.scrollTo({top:0,behavior:reduced()?'instant':'smooth'});}
+    function enterCategory(name){state.category=name;state.limit=8;state.expanded='';$('status').textContent='';render();motion($('results'),[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}]);$('title').focus({preventScroll:true});if(dialog.tagName==='DIALOG')dialog.scrollTo({top:0,behavior:reduced()?'instant':'smooth'});}
     function openEdit(id){
       if(saveCount||backupBusy||saveError||loadError||!currentUser)return;
       const r=rows.find(r=>r.id===id);if(!r)return;
@@ -3545,8 +3576,11 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
         if(['udgifter','indkomst','opsparing'].includes(kind)) state.kind=kind;
       }
       refresh();
-      dialog=document.createElement('dialog');dialog.id='bx-dialog';dialog.className='bh-explorer';dialog.setAttribute('aria-labelledby','bx-heading');dialog.innerHTML=`<section class="window" id="bx-detail"><header><div><div class="eyebrow">UDFORSK DIT BUDGET · ${aar}</div><h1 id="bx-heading">Detaljeret oversigt</h1><p class="sub" id="bx-hint">Vælg en kategori for at se, hvad pengene er brugt på.</p></div><button class="soft" id="bx-close">Luk</button></header><div class="controls"><div class="tabs" role="group" aria-label="Vælg type"><button data-kind="udgifter" aria-pressed="true">Udgifter</button><button data-kind="indkomst" aria-pressed="false">Indkomster</button><button data-kind="opsparing" aria-pressed="false">Opsparing & investering</button></div><label class="period">Periode<select id="bx-period"><option value="all">Hele ${aar}</option><optgroup id="bx-period-months" label="En enkelt måned"></optgroup><option value="custom">Vælg periode…</option></select></label></div><div class="custom" id="bx-custom" hidden><label>Fra måned<select id="bx-from"></select></label><label>Til måned<select id="bx-to"></select></label></div><div class="search"><input id="bx-search" type="search" aria-label="Søg efter en postering" placeholder="Søg efter en udgift…"><button id="bx-clear" aria-label="Ryd søgning" hidden>×</button></div><div id="bx-location" class="location"></div><div class="summary" aria-live="polite" role="status"><div><h2 id="bx-title" class="summary-title">Alle udgiftskategorier</h2><div id="bx-count" class="summary-count"></div><div class="summary-count"><span id="bx-average-label"></span><strong id="bx-average"></strong></div></div><div id="bx-total" class="summary-amount"></div></div><p id="bx-average-help" class="sub" style="margin:-8px 0 16px"></p><details class="more-options" id="bx-options"><summary>Sortering og flere tal</summary><div class="bx-options-panel"><div class="options-inner"><label>Sortér efter<select id="bx-sort"><option value="desc">Største beløb</option><option value="asc">Mindste beløb</option><option value="newest">Nyeste først</option><option value="name">Navn A–Å</option></select></label></div></div></details><div id="bx-results"></div><div id="bx-footer" class="footer"></div><div id="bx-status" class="status" role="status"></div><p class="note" id="bx-note">Forbrug er uden opsparing og investering. Tallene følger den valgte periode.</p></section>`;
-      document.body.appendChild(dialog);init();render();dialog.showModal();motion(dialog,[{opacity:0,transform:'translateY(10px) scale(.99)'},{opacity:1,transform:'translateY(0) scale(1)'}],210);$('search').focus({preventScroll:true});
+      const inlineHost=document.getElementById('annual-posts');
+      dialog=document.createElement(inlineHost?'section':'dialog');
+      if(inlineHost){dialog.open=true;dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;};}
+      dialog.id='bx-dialog';dialog.className='bh-explorer';dialog.setAttribute('aria-labelledby','bx-heading');dialog.innerHTML=`<section class="window" id="bx-detail"><header><div><div class="eyebrow">UDFORSK DIT BUDGET · ${aar}</div><h1 id="bx-heading">Detaljeret oversigt</h1><p class="sub" id="bx-hint">Vælg en kategori for at se, hvad pengene er brugt på.</p></div><button class="soft" id="bx-close">Luk</button></header><div class="controls"><div class="tabs" role="group" aria-label="Vælg type"><button data-kind="udgifter" aria-pressed="true">Udgifter</button><button data-kind="indkomst" aria-pressed="false">Indkomster</button><button data-kind="opsparing" aria-pressed="false">Opsparing & investering</button></div><label class="period">Periode<select id="bx-period"><option value="all">Hele ${aar}</option><optgroup id="bx-period-months" label="En enkelt måned"></optgroup><option value="custom">Vælg periode…</option></select></label></div><div class="custom" id="bx-custom" hidden><label>Fra måned<select id="bx-from"></select></label><label>Til måned<select id="bx-to"></select></label></div><div class="search"><input id="bx-search" type="search" aria-label="Søg efter en postering" placeholder="Søg efter en udgift…"><button id="bx-clear" aria-label="Ryd søgning" hidden>×</button></div><div id="bx-location" class="location"></div><div class="summary" aria-live="polite" role="status"><div><h2 id="bx-title" class="summary-title">Alle udgiftskategorier</h2><div id="bx-count" class="summary-count"></div><div class="summary-count"><span id="bx-average-label"></span><strong id="bx-average"></strong></div></div><div id="bx-total" class="summary-amount"></div></div><p id="bx-average-help" class="sub" style="margin:-8px 0 16px"></p><details class="more-options" id="bx-options"><summary>Sortering og flere tal</summary><div class="bx-options-panel"><div class="options-inner"><label>Sortér efter<select id="bx-sort"><option value="desc">Største beløb</option><option value="asc">Mindste beløb</option><option value="newest">Nyeste først</option><option value="name">Navn A–Å</option></select></label></div></div></details><div id="bx-results"></div><div id="bx-footer" class="footer"></div><div id="bx-status" class="status" role="status"></div><p class="note" id="bx-note">Forbrug er uden opsparing og investering. Tallene følger den valgte periode.</p></section>`;
+      (inlineHost || document.body).appendChild(dialog);init();render();if(inlineHost)document.getElementById('bx-heading').textContent='Posteringer';dialog.showModal();motion(dialog,[{opacity:0,transform:'translateY(10px) scale(.99)'},{opacity:1,transform:'translateY(0) scale(1)'}],210);$('search').focus({preventScroll:true});
       dialog.addEventListener('cancel',e=>{e.preventDefault();close();});dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();}});
       updateSaveStatus();
     }
@@ -3599,7 +3633,7 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
       <p>${erOversigt ? 'Se, hvordan indkomst, forbrug og opsparing har udviklet sig.' : 'Månedens saldo, forbrug og opsparing samlet ét sted.'}</p></div>
       <div class="budget-periods">
         <label class="budget-period"><span>År</span><select class="bh-year-select" aria-label="Vælg år" onchange="vaelgAar(this.value)">${aarValgmuligheder()}</select></label>
-        ${erOversigt ? `<button type="button" class="bh-add-btn budget-year-action" onclick="aabnIndsigter('year',this)" aria-haspopup="dialog">${iconTrendUp()} Året i tal</button><button type="button" class="bh-add-btn budget-year-action" onclick="aabnIndsigter('compare',this)" aria-haspopup="dialog">${iconSammenlign()} Sammenlign</button>` : `<div class="budget-period budget-month">
+        ${erOversigt ? '' : `<div class="budget-period budget-month">
           <button class="bh-year-btn bh-tooltip" data-tooltip="Forrige måned" onclick="flytMaaned(-1)" aria-label="Forrige måned" ${aar===1000 && maanedIndex===0 ? 'disabled' : ''}>${iconChevron('left')}</button>
           <select aria-label="Vælg måned" onchange="skiftMaaned(Number(this.value))">${MAANEDER.map((m,i)=>'<option value="'+i+'"'+(i===maanedIndex?' selected':'')+'>'+m+'</option>').join('')}</select>
           <button class="bh-year-btn bh-tooltip bh-tooltip-left" data-tooltip="Næste måned" onclick="flytMaaned(1)" aria-label="Næste måned" ${aar===9999 && maanedIndex===11 ? 'disabled' : ''}>${iconChevron('right')}</button>
@@ -4124,6 +4158,102 @@ $('footer').innerHTML=items.length?`<span>${Math.min(state.limit,items.length)} 
     if (document.visibilityState === 'visible') tjekForOpdatering();
   });
   setInterval(tjekForOpdatering, 30 * 60 * 1000);
+
+  let annualView = 'overview';
+  let annualKind = 'udgifter';
+  let annualDetailReady = false;
+  let annualDataKey = '';
+  function initialiseAnnualViews() {
+    const key=currentUser?.uid+':'+aar;
+    if(key===annualDataKey)return;
+    annualDataKey=key;annualDetailReady=false;annualKind='udgifter';
+    const now=new Date(),limit=aar===now.getFullYear()?now.getMonth():11;
+    const indices=data.map((m,i)=>m.indkomst.length+m.udgifter.length?i:-1).filter(i=>i>=0&&i<=limit);
+    indsigtAfter=Math.max(1,indices.length?indices[indices.length-1]:limit);
+    indsigtBefore=indsigtAfter-1;sammenligningA=indsigtBefore;sammenligningB=indsigtAfter;
+    sammenligningType='maaneder';indsigtFane='compare';
+  }
+  const annualViews = [
+    ['overview','Overblik','Diagrammer og kategorier'],
+    ['posts','Posteringer','Søg og se betalinger'],
+    ['compare','Sammenlign','Perioder og ændringer']
+  ];
+
+  function renderAnnualNavigation() {
+    return '<nav class="annual-navigation" aria-label="Årsoversigtens visninger">'+annualViews.map(([key,label,hint])=>
+      '<button type="button" id="annual-nav-'+key+'" aria-current="'+(key===annualView?'page':'false')+'" onclick="vaelgAnnualView(\''+key+'\')"><strong>'+label+'</strong><small>'+hint+'</small></button>'
+    ).join('')+'</nav>';
+  }
+
+  function annualComparison() {
+    const content = indsigtFane==='changes' ? renderAendringer(indsigtBefore,indsigtAfter) : renderSammenligningPanel(true);
+    return `<section class="bh-panel annual-analysis" id="annual-insights">
+      <header class="annual-panel-heading"><div><h2>Sammenlign</h2><p>Se forskellene mellem perioder, og find de poster, der har ændret sig.</p></div></header>
+      <div class="annual-subnav" role="group" aria-label="Sammenligning">
+        <button type="button" aria-pressed="${indsigtFane!=='changes'}" onclick="vaelgAnnualCompare('compare')">Sammenlign perioder</button>
+        <button type="button" aria-pressed="${indsigtFane==='changes'}" onclick="vaelgAnnualCompare('changes')">Hvad har ændret sig?</button>
+      </div>${content}
+    </section>`;
+  }
+
+  const originalAnnualOverview = renderYearOverview;
+  renderYearOverview = function() {
+    initialiseAnnualViews();
+    const navigation = renderAnnualNavigation();
+    if(annualView==='posts') return navigation+'<div id="annual-posts"></div>';
+    if(annualView==='compare') return navigation+annualComparison();
+    return navigation+originalAnnualOverview();
+  };
+
+  const originalAnnualRenderApp = renderApp;
+  renderApp = function() {
+    originalAnnualRenderApp();
+    if(visning==='oversigt' && annualView==='posts') {
+      detailExplorer.open(annualDetailReady,{kind:annualKind});
+      annualDetailReady=true;
+    }
+  };
+  renderOversigtVaerktoejer = () => '';
+
+  const originalAnnualOpdaterIndsigter = opdaterIndsigter;
+  opdaterIndsigter = function() {
+    const panel=document.getElementById('annual-insights');
+    if(panel && annualView==='compare') {
+      const active=document.activeElement;
+      const focusId=panel.contains(active)?active.id:null;
+      panel.outerHTML=annualComparison();
+      if(focusId)document.getElementById(focusId)?.focus({preventScroll:true});
+      return;
+    }
+    originalAnnualOpdaterIndsigter();
+  };
+
+  window.vaelgAnnualView = value => {
+    if(!annualViews.some(([key])=>key===value))return;
+    detailExplorer.discard();
+    annualView=value;
+    if(value==='compare' && !['compare','changes'].includes(indsigtFane))indsigtFane='compare';
+    render();
+    document.getElementById('annual-nav-'+value)?.focus({preventScroll:true});
+  };
+  window.vaelgAnnualCompare = value => {
+    if(value==='changes' && sammenligningType==='maaneder') {
+      indsigtBefore=sammenligningA;
+      indsigtAfter=sammenligningB;
+    }
+    indsigtFane=value;
+    opdaterIndsigter();
+  };
+  window.aabnKategoriDetaljer = button => {
+    annualKind=button.dataset.kind;
+    annualDetailReady=false;
+    window.vaelgAnnualView('posts');
+  };
+  window.aabnIndsigter = tab => {
+    indsigtFane=tab==='changes'?'changes':'compare';
+    window.vaelgAnnualView('compare');
+  };
+
 </script>
 </body>
 </html>
