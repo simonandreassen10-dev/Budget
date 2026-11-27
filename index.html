@@ -1208,6 +1208,15 @@ body.bh-dark{color-scheme:dark}body:not(.bh-dark){color-scheme:light}
     #annual-posts .summary { align-items:flex-start;flex-wrap:wrap;gap:12px; }
   }
 
+
+  @media(max-width:420px) {
+    .budget-year-metrics { grid-template-columns:1fr;gap:8px; }
+    .budget-year-metrics .budget-metric { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 10px;min-height:0;padding:13px; }
+    .budget-year-metrics .budget-metric-label { min-width:0; }
+    .budget-year-metrics .budget-metric > strong { grid-column:2;grid-row:1 / span 2;margin:0;font-size:clamp(18px,5vw,20px);white-space:nowrap; }
+    .budget-year-metrics .budget-metric > small { grid-column:1; }
+  }
+
 </style>
 </head>
 <body>
